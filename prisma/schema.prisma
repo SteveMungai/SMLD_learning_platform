@@ -22,6 +22,10 @@ model User {
 
   accounts Account[]
   sessions Session[]
+
+  cohortId  String?
+  cohort    Cohort?    @relation("CohortStudents", fields: [cohortId], references: [id])
+  materials Material[]
 }
 
 model Account {
@@ -64,4 +68,53 @@ enum Role {
   STUDENT
   INSTRUCTOR
   ADMIN
+}
+
+
+model Cohort {
+  id        String    @id @default(cuid())
+  name      String
+  startDate DateTime?
+  EndDate   DateTime?
+  cteatedAt DateTime  @default(now())
+
+  weeks   Week[]
+  students User[]   @relation("CohortStudents")
+}
+model Week {
+  id          String    @id @default(cuid())
+  cohort      Cohort    @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  cohortId    String
+  weekNumber  Int
+  topic       String       
+  sessionDate DateTime?
+  description String?
+  createdAt   DateTime  @default(now())
+
+  materials Material[]
+
+  @@unique([cohortId, weekNumber])
+}
+
+model Material {
+  id           String       @id @default(cuid())
+  week         Week         @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId       String
+  type         MaterialType
+  title        String
+  fileUrl      String
+  fileSize     Int?
+  mimeType     String?
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  createdAt    DateTime     @default(now())
+
+  @@unique([weekId, type, title])
+}
+
+enum MaterialType {
+  VIDEO
+  SLIDES
+  NOTES
+  OTHER
 }
