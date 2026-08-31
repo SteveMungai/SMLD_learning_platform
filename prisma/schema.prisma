@@ -1,4 +1,10 @@
 // prisma/schema.prisma
+//
+// Exception: Account, Session, VerificationToken are NextAuth's
+// own tables, not part of the ERD, so they keep NextAuth's
+// standard field naming. A few fields (emailVerified, image,
+// updatedAt on User) also aren't in the ERD — kept in camelCase
+// and flagged with a comment, since there's no diagram label to match.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,18 +16,27 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String?   // hashed — null when using OAuth only
-  image         String?
-  role          Role      @default(STUDENT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  UserID        String    @id @default(cuid())
+  FullName      String?
+  Email         String    @unique
+  Password      String?   // hashed — null when using OAuth only
+  Role          Role      @default(STUDENT)
+  DateCreated   DateTime  @default(now())
+  emailVerified DateTime? // not in ERD — NextAuth field
+  image         String?   // not in ERD — NextAuth field
+  updatedAt     DateTime  @updatedAt // not in ERD
 
   accounts Account[]
   sessions Session[]
+
+  // ── SMLD platform relations ──
+  cohortMemberships CohortMembership[]
+  submissions        Submission[]        @relation("StudentSubmissions")
+  gradesFinalized    Grade[]             @relation("InstructorFinalizesGrades")
+  answersGraded      SubmissionAnswer[]  @relation("InstructorGradesAnswers")
+  attendanceRecords  Attendance[]        @relation("StudentAttendance")
+  attendanceMarked   Attendance[]        @relation("InstructorMarksAttendance")
+  adminLogs          AdminLog[]
 }
 
 model Account {
@@ -38,7 +53,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [UserID], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -49,7 +64,7 @@ model Session {
   userId       String
   expires      DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [UserID], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -64,4 +79,239 @@ enum Role {
   STUDENT
   INSTRUCTOR
   ADMIN
+}
+
+// ─────────────────────────────────────────────────────────────
+// SMLD Learning Platform — cohorts, courses, content, assignments,
+// rubric grading, attendance, and admin logging
+// ─────────────────────────────────────────────────────────────
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum QuestionType {
+  SHORT_ANSWER
+  ESSAY
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  LATE
+}
+
+enum GradeStatus {
+  PENDING
+  COMPLETE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+model Cohort {
+  CohortID     String  @id @default(cuid())
+  CohortName   String
+  AcademicYear String
+  Description  String?
+
+  memberships CohortMembership[]
+  courses     Course[]
+  assignments Assignment[]
+}
+
+model CohortMembership {
+  MembershipID String           @id @default(cuid())
+  UserID       String
+  CohortID     String
+  Status       MembershipStatus @default(ACTIVE)
+  DateJoined   DateTime         @default(now())
+
+  user   User   @relation(fields: [UserID], references: [UserID], onDelete: Cascade)
+  cohort Cohort @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
+
+  @@unique([UserID, CohortID])
+}
+
+model Course {
+  CourseID    String  @id @default(cuid())
+  CohortID    String
+  Title       String
+  Description String?
+
+  cohort  Cohort   @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
+  lessons Lesson[]
+}
+
+model Lesson {
+  LessonID      String   @id @default(cuid())
+  CourseID      String
+  Title         String
+  SequenceOrder Int
+  DateCreated   DateTime @default(now())
+
+  course       Course        @relation(fields: [CourseID], references: [CourseID], onDelete: Cascade)
+  video        Video?
+  audio        Audio?
+  notes        Note[]
+  assignments  Assignment[]
+  attendance   Attendance[]
+  zoomMeetings ZoomMeeting[]
+}
+
+model Video {
+  VideoID         String @id @default(cuid())
+  LessonID        String @unique
+  Title           String
+  YoutubeLink     String
+  DurationSeconds Int?
+
+  lesson Lesson @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+}
+
+model Audio {
+  AudioID         String @id @default(cuid())
+  LessonID        String @unique
+  Title           String
+  AudioLink       String
+  DurationSeconds Int?
+
+  lesson Lesson @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+}
+
+model ZoomMeeting {
+  MeetingID     String   @id @default(cuid())
+  LessonID      String
+  Title         String
+  MeetingLink   String?
+  RecordingLink String?
+  MeetingDate   DateTime
+
+  lesson Lesson @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+}
+
+model Note {
+  NoteID   String  @id @default(cuid())
+  LessonID String
+  Title    String
+  Content  String?
+  FileLink String?
+
+  lesson Lesson @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+}
+
+model Assignment {
+  AssignmentID String   @id @default(cuid())
+  LessonID     String
+  CohortID     String
+  Title        String
+  Description  String?
+  DeadlineDate DateTime
+  MaxScore     Float?   // cached total — sum of this assignment's Question.MaxScore values
+
+  lesson      Lesson       @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+  cohort      Cohort       @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
+  questions   Question[]
+  submissions Submission[]
+}
+
+model Question {
+  QuestionID    String       @id @default(cuid())
+  AssignmentID  String
+  QuestionText  String
+  SequenceOrder Int
+  QuestionType  QuestionType @default(SHORT_ANSWER)
+  MaxScore      Float
+
+  assignment Assignment         @relation(fields: [AssignmentID], references: [AssignmentID], onDelete: Cascade)
+  answers    SubmissionAnswer[]
+}
+
+model Submission {
+  SubmissionID String           @id @default(cuid())
+  AssignmentID String
+  StudentID    String
+  SubmittedAt  DateTime?
+  Status       SubmissionStatus @default(DRAFT)
+  ReceiptCode  String?          @unique
+
+  assignment  Assignment         @relation(fields: [AssignmentID], references: [AssignmentID], onDelete: Cascade)
+  student     User               @relation("StudentSubmissions", fields: [StudentID], references: [UserID], onDelete: Cascade)
+  answers     SubmissionAnswer[]
+  attachments Attachment[]
+  grade       Grade?
+
+  @@unique([AssignmentID, StudentID])
+}
+
+model SubmissionAnswer {
+  AnswerID     String    @id @default(cuid())
+  SubmissionID String
+  QuestionID   String
+  AnswerText   String?
+  ScoreAwarded Float?
+  Feedback     String?
+  GradedByID   String?
+  GradedAt     DateTime?
+
+  submission Submission @relation(fields: [SubmissionID], references: [SubmissionID], onDelete: Cascade)
+  question   Question   @relation(fields: [QuestionID], references: [QuestionID], onDelete: Cascade)
+  gradedBy   User?      @relation("InstructorGradesAnswers", fields: [GradedByID], references: [UserID], onDelete: SetNull)
+
+  @@unique([SubmissionID, QuestionID])
+}
+
+model Attachment {
+  AttachmentID String   @id @default(cuid())
+  SubmissionID String
+  FileName     String
+  FileLink     String
+  FileSizeKB   Int?
+  DateUploaded DateTime @default(now())
+
+  submission Submission @relation(fields: [SubmissionID], references: [SubmissionID], onDelete: Cascade)
+}
+
+model Grade {
+  GradeID          String      @id @default(cuid())
+  SubmissionID     String      @unique
+  FinalizedByID    String?
+  TotalScore       Float?
+  MaxPossibleScore Float?
+  OverallFeedback  String?
+  Status           GradeStatus @default(PENDING)
+  FinalizedAt      DateTime?
+
+  submission  Submission @relation(fields: [SubmissionID], references: [SubmissionID], onDelete: Cascade)
+  finalizedBy User?      @relation("InstructorFinalizesGrades", fields: [FinalizedByID], references: [UserID], onDelete: SetNull)
+}
+
+model Attendance {
+  AttendanceID String           @id @default(cuid())
+  UserID       String
+  LessonID     String
+  Status       AttendanceStatus
+  MarkedByID   String?
+  MarkedAt     DateTime         @default(now())
+
+  user     User   @relation("StudentAttendance", fields: [UserID], references: [UserID], onDelete: Cascade)
+  lesson   Lesson @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+  markedBy User?  @relation("InstructorMarksAttendance", fields: [MarkedByID], references: [UserID], onDelete: SetNull)
+
+  @@unique([UserID, LessonID])
+}
+
+model AdminLog {
+  LogID      String   @id @default(cuid())
+  AdminID    String
+  Action     String
+  TargetType String
+  TargetID   String
+  Timestamp  DateTime @default(now())
+
+  admin User @relation(fields: [AdminID], references: [UserID], onDelete: Cascade)
 }
