@@ -18,6 +18,5 @@ export default defineConfig({
   // DATABASE_URL separately; this only affects CLI commands.
   datasource: {
     url: env("DIRECT_URL"),
-    shadowDatabaseUrl: env("SHADOW_DATABASE_URL"),
   },
 });
