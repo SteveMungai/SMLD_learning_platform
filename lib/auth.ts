@@ -7,9 +7,15 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 // Google is only added if credentials exist in .env.local.
-// This means you can leave Google Cloud setup for later — nothing breaks,
+//  Google Cloud will be setup later
 // and the "Sign in with Google" button simply won't be wired up until you add the keys.
-const providers = [];
+//
+// PrismaAdapter expects
+// default NextAuth field names on User (email, name, image, emailVerified),
+// but our User model uses Email, FullName, image, and no emailVerified rename
+// needed — Email/FullName WILL break the adapter's internal calls. Come back
+// to this before enabling Google.
+const providers: NextAuthOptions["providers"] = [];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
@@ -46,29 +52,32 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required.");
         }
 
+  
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { Email: credentials.email },
         });
 
-        if (!user || !user.password) {
+        
+        if (!user || !user.Password) {
           throw new Error("No account found with that email.");
         }
 
         const passwordMatch = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.Password
         );
 
         if (!passwordMatch) {
           throw new Error("Incorrect password.");
         }
 
+       
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
+          id: user.UserID,
+          email: user.Email,
+          name: user.FullName,
           image: user.image,
-          role: user.role,
+          role: user.Role,
         };
       },
     }),
@@ -76,6 +85,8 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
+      // `user` here is the object authorize() returned above (NextAuth's
+      // shape)
       if (user) {
         token.id = user.id;
         token.role = user.role;

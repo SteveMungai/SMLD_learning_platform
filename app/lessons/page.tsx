@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PlayCircle, Headphones, FileText, Video as VideoIcon, ChevronDown } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import { useRouter } from "next/navigation";
 
 type LessonSummary = {
   LessonID: string;
@@ -36,7 +37,7 @@ type CohortOption = {
 const MOCK_COHORTS: CohortOption[] = [
   {
     CohortID: "cohort-1",
-    CohortName: "Claycity January Cohort",
+    CohortName: "Claycity September Cohort",
     AcademicYear: "2026",
     courses: [
       {
@@ -60,7 +61,7 @@ const MOCK_COHORTS: CohortOption[] = [
   },
   {
     CohortID: "cohort-2",
-    CohortName: "Claycity September Cohort",
+    CohortName: "Claycity January Cohort",
     AcademicYear: "2026",
     courses: [
       {
@@ -93,7 +94,6 @@ function ContentBadge({ active, icon: Icon, label }: { active: boolean; icon: ty
 }
 
 export default function LessonsPage() {
-  const router = useRouter();
   const [selectedCohortId, setSelectedCohortId] = useState(MOCK_COHORTS[0].CohortID);
 
   const selectedCohort = useMemo(
@@ -106,13 +106,13 @@ export default function LessonsPage() {
       <Navbar />
 
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
-
+        
 
         <main className="flex-1 px-6 py-16">
           <section className="max-w-3xl mb-10">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
             <p className="text-[15px] leading-relaxed" style={{ color: "#6b7280" }}>
-              Browse lessons by cohort. Select a cohort below to see its courses and lessons.
+              Browse lessons by cohort. Click a lesson to view its assignment.
             </p>
           </section>
 
@@ -152,11 +152,11 @@ export default function LessonsPage() {
                   {course.lessons
                     .sort((a, b) => a.SequenceOrder - b.SequenceOrder)
                     .map((lesson) => (
-                      <div
+                      <Link
                         key={lesson.LessonID}
+                        href={`/questions/${lesson.LessonID}`}
                         style={cardStyle}
-                        className="flex items-center justify-between p-5 rounded-xl transition-all duration-200 hover:shadow-sm"
-                        onClick={() => router.push(`/questions`)}
+                        className="flex items-center justify-between p-5 rounded-xl transition-all duration-200 hover:shadow-sm cursor-pointer"
                       >
                         <div className="flex items-center min-w-0">
                           <span
@@ -174,7 +174,7 @@ export default function LessonsPage() {
                           <ContentBadge active={lesson.hasNotes} icon={FileText} label="Notes" />
                           <ContentBadge active={lesson.hasZoom} icon={VideoIcon} label="Zoom recording" />
                         </div>
-                      </div>
+                      </Link>
                     ))}
                 </div>
               </section>

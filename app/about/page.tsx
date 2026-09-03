@@ -1,6 +1,8 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import Link from 'next/link';
+import Footer from '@//components/Footer';
+import Navbar from '@//components/Navbar';
 // 1. The Data Contract: This exactly mirrors our future prisma schema
 interface ContributorProfile {
   id: string;
@@ -108,30 +110,7 @@ function ContributorCard({ contributor }: { contributor: ContributorProfile }) {
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-black selection:bg-red-100 antialiased">
-      
-      {/* Navigation Header */}
-      <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center">
-            {/* Logo Wrapper */}
-            <div className="w-14 h-14 bg-gray-50 border border-gray-150 rounded flex items-center justify-center text-[9px] font-bold text-center leading-tight tracking-tighter p-1 text-gray-500">
-              CITAM LOGO PLACEHOLDER
-            </div>
-          </div>
-          <nav className="flex space-x-10 text-[13px] font-bold tracking-widest text-gray-800">
-            <Link href="/" className="hover:text-red-600 transition-colors duration-150">HOME</Link>
-            <Link href="/notes" className="hover:text-red-600 transition-colors duration-150">NOTES</Link>
-            <Link href="/assignments" className="hover:text-red-600 transition-colors duration-150">ASSIGNMENTS</Link>
-            <Link href="/about" className="text-red-600 border-b-2 border-red-600 pb-1">ABOUT</Link>
-          </nav>
-          
-          <div className="flex items-center">
-            <button aria-label="User Profile" className="p-1.5 hover:bg-gray-50 rounded-full transition-colors">
-              <User size={26} className="text-gray-900 stroke-[1.5]" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content Layout */}
       <main className="flex-grow max-w-6xl mx-auto w-full px-6 py-16">
@@ -151,41 +130,7 @@ export default function AboutPage() {
           ))}
         </section>
       </main>
-
-      {/* Footer System */}
-      <footer className="bg-[#E2E2E2] w-full border-t border-gray-300 py-12 px-6 flex flex-col items-center text-center">
-        <div className="flex flex-col items-center max-w-4xl w-full">
-          <div className="flex items-center justify-center space-x-3 mb-3">
-            <div className="w-6 h-6 bg-gray-400 rounded flex items-center justify-center text-[7px] font-black text-white">
-              C
-            </div>
-            <h2 className="text-lg font-bold tracking-tight text-gray-800">
-              School of Ministry and Leadership Development
-            </h2>
-          </div>
-          
-          <p className="text-sm font-semibold text-gray-700 tracking-wide uppercase mb-6">
-            Connect
-          </p>
-          
-          <div className="flex space-x-4 mb-8">
-            <a href="#" className="bg-black hover:bg-gray-800 text-white p-2.5 rounded transition-colors" aria-label="Facebook">
-              <IconFacebook />
-            </a>
-            <a href="#" className="bg-black hover:bg-gray-800 text-white p-2.5 rounded transition-colors" aria-label="X (Twitter)">
-              <IconTwitter />
-            </a>
-            <a href="#" className="bg-black hover:bg-gray-800 text-white p-2.5 rounded transition-colors" aria-label="Instagram">
-              <IconInstagram />
-            </a>
-          </div>
-          
-          <div className="text-xs text-gray-600 leading-relaxed font-medium border-t border-gray-300/60 pt-6 w-full max-w-xl">
-            CITAM School of Ministry and Leadership Development [SMLD]© 2026 , <br />
-            All Rights Reserved | SMLD | Claycity Cohort
-          </div>
-        </div>
-      </footer>
+        <Footer />
     </div>
   );
 }
