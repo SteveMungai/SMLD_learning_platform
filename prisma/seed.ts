@@ -14,30 +14,30 @@ async function main() {
   const instructorPassword = await bcrypt.hash("P@ssh@ash#!", 10);
 
   const student = await prisma.user.upsert({
-    where: { email: "tester@example.com" },
+    where: { Email: "tester2@example.com" },
     update: {},
     create: {
-      email: "tester@example.com",
-      name: "Test Student",
-      password: studentPassword,
+      Email: "tester2@example.com",
+      FullName: "Test Student",
+      Password: studentPassword,
       role: "STUDENT",
     },
   });
 
   const instructor = await prisma.user.upsert({
-    where: { email: "instructor@example.com" },
+    where: { Email: "instructor@example.com" },
     update: {},
     create: {
-      email: "instructor@example.com",
-      name: "Test Instructor",
-      password: instructorPassword,
+      Email: "instructor@example.com",
+      FullName: "Test Instructor",
+      Password: instructorPassword,
       role: "INSTRUCTOR",
     },
   });
 
   console.log("Seeded test accounts:");
-  console.log(`  Student:    ${student.email} / P@ssh@ash#!`);
-  console.log(`  Instructor: ${instructor.email} / P@ssh@ash#!`);
+  console.log(`  Student:    ${student.Email} / P@ssh@ash#!`);
+  console.log(`  Instructor: ${instructor.Email} / P@ssh@ash#!`);
 }
 
 main()
