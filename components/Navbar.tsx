@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Lessons", href: "/lessons" },
-  { label: "Assignments", href: "/assignments" },
+  { label: "Grades", href: "/questions" },
   { label: "About", href: "/about" },
 ];
 
@@ -28,10 +29,15 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 no-underline">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium"
-            style={{ background: "#E02020" }}
+            className="w-8 h-8 flex items-center justify-center "
           >
-            CITAM
+            <Image
+              src="/CITAM-LOGO.png"
+              alt="CITAM logo"
+              width={32}
+              height={32}
+              
+            />
           </div>
           <span className="text-sm font-semibold text-gray-900 hidden sm:block">SMLD</span>
         </Link>

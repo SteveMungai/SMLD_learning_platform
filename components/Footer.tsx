@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 const IconFacebook = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="stroke-none">
@@ -8,7 +9,7 @@ const IconFacebook = () => (
 
 const IconTwitter = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="stroke-none">
-    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+    <path d="M4 4l16 16M20 4 4 20" />
   </svg>
 );
 
@@ -43,9 +44,14 @@ export default function Footer() {
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
-            style={{ background: "#E02020" }}
+          style={{ background: "#ffffff" }}
           >
-            CITAM
+            <Image
+              src="/CITAM-LOGO.png"
+              alt="CITAM logo"
+              width={32}
+              height={32}
+            />
           </div>
           <span className="text-sm font-semibold text-white">
             School of Ministry and Leadership Development
