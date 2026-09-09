@@ -1,182 +1,207 @@
 "use client";
 
 import { useState } from "react";
-import type { Week, Material } from "@prisma/client";
-import { getYouTubeEmbedUrl } from "@/lib/youtube";
 
-type WeekWithMaterials = Week & { materials: Material[] };
+// --- Types ---
+type UserRole = "INSTRUCTOR" | "STUDENT";
 
-function MaterialIcon({ type }: { type: string }) {
-  if (type === "VIDEO") {
-    return (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-        <path d="M4 2.5v9l8-4.5-8-4.5z" fill="currentColor" />
-      </svg>
-    );
-  }
+type Material = {
+  id: string;
+  name: string;
+  type: "NOTES" | "ASSIGNMENT";
+  url: string;
+};
+
+type Submission = {
+  id: string;
+  studentName: string;
+  fileName: string;
+  submittedAt: string;
+};
+
+type Week = {
+  id: string;
+  weekNumber: number;
+  topic: string;
+  description: string;
+  materials: Material[];
+  submissions: Submission[]; 
+};
+
+// --- Dummy Data ---
+const DUMMY_WEEKS: Week[] = [
+  {
+    id: "w1",
+    weekNumber: 1,
+    topic: "Introduction to Application Architecture",
+    description: "This week you will be introduced to basic server routing and ORM configurations.",
+    materials: [{ id: "m1", name: "Week 1 Notes.pdf", type: "NOTES", url: "#" }],
+    submissions: [{ id: "s1", studentName: "Sumeiya Hassan", fileName: "assignment_1_sumeiya.zip", submittedAt: "2026-09-02T10:00:00Z" }],
+  },
+  {
+    id: "w2",
+    weekNumber: 2,
+    topic: "Database Schemas & ORMs",
+    description: "This week you will dive deeper into database table specifications and relationships.",
+    materials: [],
+    submissions: [],
+  },
+];
+
+// --- Components ---
+
+export default function NotesPage() {
+  const [role, setRole] = useState<UserRole>("STUDENT");
+  const [weeks] = useState<Week[]>(DUMMY_WEEKS);
+
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path
-        d="M3 1.5h5.5L11 4v8.5a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5v-10a.5.5 0 01.5-.5z"
-        stroke="currentColor"
-        strokeWidth="1"
-        fill="none"
-      />
-      <path d="M8.5 1.5V4H11" stroke="currentColor" strokeWidth="1" fill="none" />
-    </svg>
+    <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-900">
+      {/* Role Switcher (For Development/Demo) */}
+      <div className="mx-auto mb-8 flex max-w-4xl items-center justify-between rounded-lg bg-white p-4 shadow-sm">
+        <div>
+          <h1 className="text-xl font-bold">Course Notes & Assignments</h1>
+          <p className="text-sm text-gray-500">Currently viewing as: <strong className="text-blue-600">{role}</strong></p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setRole("STUDENT")} className={`rounded px-4 py-2 text-sm font-medium ${role === "STUDENT" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}>Student View</button>
+          <button onClick={() => setRole("INSTRUCTOR")} className={`rounded px-4 py-2 text-sm font-medium ${role === "INSTRUCTOR" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}>Instructor View</button>
+        </div>
+      </div>
+
+      {/* Week List */}
+      <div className="mx-auto max-w-4xl space-y-4">
+        {weeks.map((week) => (
+          <WeekCard key={week.id} week={week} role={role} />
+        ))}
+      </div>
+    </div>
   );
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  VIDEO: "Watch the session",
-  SLIDES: "Slides",
-  NOTES: "Notes",
-  OTHER: "Material",
-};
-
-function WeekContent({ week }: { week: WeekWithMaterials }) {
-  const video = week.materials.find((m) => m.type === "VIDEO");
-  const documents = week.materials.filter((m) => m.type !== "VIDEO");
-  const embedUrl = video ? getYouTubeEmbedUrl(video.fileUrl) : null;
-
-  const dateLabel = week.sessionDate
-    ? new Date(week.sessionDate).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : null;
+function WeekCard({ week, role }: { week: Week; role: UserRole }) {
+  const notes = week.materials.filter((m) => m.type === "NOTES");
+  const assignments = week.materials.filter((m) => m.type === "ASSIGNMENT");
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2
-          className="font-serif text-2xl sm:text-3xl"
-          style={{ color: "var(--paper)" }}
-        >
-          {week.topic}
-        </h2>
-        {dateLabel && (
-          <p className="mt-1 text-xs tracking-wide" style={{ color: "var(--muted)" }}>
-            {dateLabel}
-          </p>
-        )}
-        {week.description && (
-          <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-            {week.description}
-          </p>
-        )}
+    <div className="flex flex-col gap-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm sm:flex-row">
+      {/* Left side: Image Thumbnail mimicking image_f6bcdb.png */}
+      <div className="h-32 w-48 shrink-0 overflow-hidden rounded-md bg-blue-50 flex items-center justify-center border border-gray-100">
+        <span className="text-blue-300 font-bold text-xl tracking-widest uppercase">WEEK {week.weekNumber}</span>
       </div>
 
-      <div className="space-y-4">
-        {video &&
-          (embedUrl ? (
-            <div
-              className="aspect-video overflow-hidden rounded-sm"
-              style={{ border: "1px solid var(--panel-line)" }}
-            >
-              <iframe
-                src={embedUrl}
-                className="h-full w-full"
-                allowFullScreen
-                title={video.title}
-              />
-            </div>
+      {/* Right side: Content */}
+      <div className="flex flex-1 flex-col justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Week {week.weekNumber}: {week.topic || "[insert topic]"}</h2>
+          
+          {week.materials.length === 0 ? (
+            <p className="mt-1 text-sm text-gray-400 italic">Content isn't available</p>
           ) : (
-            <p className="text-sm" style={{ color: "var(--gold-dim)" }}>
-              This session&apos;s video link couldn&apos;t be loaded.
-            </p>
-          ))}
+            <p className="mt-1 text-sm font-medium text-green-600">Materials available</p>
+          )}
+          
+          <p className="mt-2 text-sm text-gray-600">{week.description}</p>
+        </div>
 
-        {documents.length > 0 && (
-          <ul
-            className="divide-y rounded-sm"
-            style={{ borderColor: "var(--panel-line)" }}
-          >
-            {documents.map((doc) => (
-              <li key={doc.id} style={{ borderColor: "var(--panel-line)" }}>
-                <a
-                  href={`/api/materials/${doc.id}/download`}
-                  className="group/link flex items-center gap-3 py-3 text-sm transition-colors"
-                  style={{ color: "var(--paper)" }}
-                >
-                  <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                    style={{
-                      background: "var(--panel)",
-                      color: "var(--gold-dim)",
-                      border: "1px solid var(--panel-line)",
-                    }}
-                  >
-                    <MaterialIcon type={doc.type} />
-                  </span>
-                  <span className="group-hover/link:underline">
-                    {TYPE_LABEL[doc.type] ?? "Material"}
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--muted)" }}>
-                    {doc.title}
-                  </span>
-                </a>
+        {/* Role-Specific Actions */}
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          {role === "INSTRUCTOR" ? (
+            <InstructorActions week={week} notes={notes} assignments={assignments} />
+          ) : (
+            <StudentActions week={week} notes={notes} assignments={assignments} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InstructorActions({ week, notes, assignments }: { week: Week; notes: Material[]; assignments: Material[] }) {
+  const [showSubmissions, setShowSubmissions] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4">
+        <div className="flex-1 rounded border border-dashed border-gray-300 bg-gray-50 p-3">
+          <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">Manage Notes</p>
+          {notes.map(n => <div key={n.id} className="text-sm text-blue-600 hover:underline cursor-pointer">{n.name}</div>)}
+          <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">+ Upload Notes</button>
+        </div>
+        
+        <div className="flex-1 rounded border border-dashed border-gray-300 bg-gray-50 p-3">
+          <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">Manage Assignments</p>
+          {assignments.map(a => <div key={a.id} className="text-sm text-blue-600 hover:underline cursor-pointer">{a.name}</div>)}
+          <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">+ Upload Assignment</button>
+        </div>
+      </div>
+
+      <div className="rounded bg-slate-50 p-3 border border-slate-200">
+        <button 
+          onClick={() => setShowSubmissions(!showSubmissions)}
+          className="flex w-full items-center justify-between text-sm font-semibold text-slate-700"
+        >
+          <span>Student Submissions ({week.submissions.length})</span>
+          <span>{showSubmissions ? "▲" : "▼"}</span>
+        </button>
+        
+        {showSubmissions && (
+          <ul className="mt-3 divide-y divide-slate-200 text-sm">
+            {week.submissions.length === 0 && <li className="py-2 text-slate-500 italic">No submissions yet.</li>}
+            {week.submissions.map(sub => (
+              <li key={sub.id} className="flex justify-between py-2">
+                <span className="font-medium text-slate-800">{sub.studentName}</span>
+                <div className="flex items-center gap-3 text-slate-500">
+                  <a href="#" className="text-blue-600 hover:underline">{sub.fileName}</a>
+                  <span className="text-xs">{new Date(sub.submittedAt).toLocaleDateString()}</span>
+                </div>
               </li>
             ))}
           </ul>
-        )}
-
-        {!video && documents.length === 0 && (
-          <p className="text-sm italic" style={{ color: "var(--muted)" }}>
-            Nothing has been posted for this week yet.
-          </p>
         )}
       </div>
     </div>
   );
 }
 
-export function NotesView({ weeks }: { weeks: WeekWithMaterials[] }) {
-  const [activeId, setActiveId] = useState(weeks[0]?.id);
-  const activeWeek = weeks.find((w) => w.id === activeId) ?? weeks[0];
+function StudentActions({ week, notes, assignments }: { week: Week; notes: Material[]; assignments: Material[] }) {
+  // Mock logic to check if current student submitted
+  const hasSubmitted = week.submissions.length > 0; 
 
   return (
-    <div>
-      {/* Week selector row */}
-      <div
-        className="mb-10 flex gap-2 overflow-x-auto pb-2"
-        role="tablist"
-        aria-label="Select a week"
-      >
-        {weeks.map((week) => {
-          const isActive = week.id === activeWeek?.id;
-          return (
-            <button
-              key={week.id}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActiveId(week.id)}
-              className="flex shrink-0 flex-col items-center gap-1.5 rounded-md px-4 py-2.5 text-left transition-colors"
-              style={{
-                background: isActive ? "var(--panel)" : "transparent",
-                border: `1px solid ${isActive ? "var(--gold-dim)" : "var(--panel-line)"}`,
-              }}
-            >
-              <span
-                className="font-serif text-lg leading-none"
-                style={{ color: isActive ? "var(--gold)" : "var(--paper)" }}
-              >
-                {week.weekNumber}
-              </span>
-              <span
-                className="text-[10px] tracking-wide uppercase"
-                style={{ color: "var(--muted)" }}
-              >
-                Week
-              </span>
-            </button>
-          );
-        })}
+    <div className="flex flex-col gap-6 sm:flex-row">
+      <div className="flex-1 space-y-3">
+        <div>
+          <p className="mb-1 text-xs font-semibold text-gray-500 uppercase">Course Notes</p>
+          {notes.length > 0 ? notes.map(n => (
+            <a key={n.id} href={n.url} className="block text-sm text-blue-600 hover:underline">Download {n.name}</a>
+          )) : <p className="text-sm text-gray-400 italic">No notes posted yet</p>}
+        </div>
+        
+        <div>
+          <p className="mb-1 text-xs font-semibold text-gray-500 uppercase">Assignment</p>
+          {assignments.length > 0 ? assignments.map(a => (
+            <a key={a.id} href={a.url} className="block text-sm text-blue-600 hover:underline">Download {a.name}</a>
+          )) : <p className="text-sm text-gray-400 italic">No assignment posted yet</p>}
+        </div>
       </div>
 
-      {/* Selected week's content */}
-      {activeWeek && <WeekContent week={activeWeek} />}
+      <div className="flex-1 rounded border border-gray-200 bg-gray-50 p-4">
+        <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">Your Submission</p>
+        {hasSubmitted ? (
+          <div>
+            <span className="inline-block rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 mb-2">Submitted</span>
+            <p className="text-sm text-gray-600">Your assignment has been recorded.</p>
+            <button className="mt-3 text-sm font-medium text-blue-600 hover:underline">Replace submission</button>
+          </div>
+        ) : (
+          <div>
+            <span className="inline-block rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800 mb-2">Pending</span>
+            <div className="mt-2 flex items-center justify-center rounded border border-dashed border-gray-400 bg-white p-4">
+              <button className="text-sm font-medium text-blue-600 hover:text-blue-800">Upload your work</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
