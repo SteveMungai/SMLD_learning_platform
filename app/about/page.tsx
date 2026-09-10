@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from 'lucide-react';
-
+import Link from 'next/link';
 // 1. The Data Contract: This exactly mirrors our future prisma schema
 interface ContributorProfile {
   id: string;
@@ -119,10 +119,10 @@ export default function AboutPage() {
             </div>
           </div>
           <nav className="flex space-x-10 text-[13px] font-bold tracking-widest text-gray-800">
-            <a href="/home" className="hover:text-red-600 transition-colors duration-150">HOME</a>
-            <a href="/notes" className="hover:text-red-600 transition-colors duration-150">NOTES</a>
-            <a href="/assignments" className="hover:text-red-600 transition-colors duration-150">ASSIGNMENTS</a>
-            <a href="/about" className="text-red-600 border-b-2 border-red-600 pb-1">ABOUT</a>
+            <Link href="/" className="hover:text-red-600 transition-colors duration-150">HOME</Link>
+            <Link href="/notes" className="hover:text-red-600 transition-colors duration-150">NOTES</Link>
+            <Link href="/assignments" className="hover:text-red-600 transition-colors duration-150">ASSIGNMENTS</Link>
+            <Link href="/about" className="text-red-600 border-b-2 border-red-600 pb-1">ABOUT</Link>
           </nav>
           
           <div className="flex items-center">
