@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -26,6 +24,10 @@ model User {
   cohortId  String?
   cohort    Cohort?    @relation("CohortStudents", fields: [cohortId], references: [id])
   materials Material[]
+
+  assignmentsCreated Assignment[] @relation("AssignmentCreator")
+  submissions        Submission[] @relation("StudentSubmissions")
+  gradedSubmissions  Submission[] @relation("GraderSubmissions")
 }
 
 model Account {
@@ -70,17 +72,17 @@ enum Role {
   ADMIN
 }
 
-
 model Cohort {
   id        String    @id @default(cuid())
   name      String
   startDate DateTime?
-  EndDate   DateTime?
-  cteatedAt DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
 
-  weeks   Week[]
+  weeks    Week[]
   students User[]   @relation("CohortStudents")
 }
+
 model Week {
   id          String    @id @default(cuid())
   cohort      Cohort    @relation(fields: [cohortId], references: [id], onDelete: Cascade)
@@ -91,7 +93,8 @@ model Week {
   description String?
   createdAt   DateTime  @default(now())
 
-  materials Material[]
+  materials   Material[]
+  assignments Assignment[]
 
   @@unique([cohortId, weekNumber])
 }
@@ -117,4 +120,42 @@ enum MaterialType {
   SLIDES
   NOTES
   OTHER
+}
+
+model Assignment {
+  id           String   @id @default(cuid())
+  week         Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId       String
+  title        String
+  instructions String?
+  dueDate      DateTime
+  maxScore     Int      @default(100)
+  createdBy    User     @relation("AssignmentCreator", fields: [createdById], references: [id])
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  submissions Submission[]
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId String
+  student      User             @relation("StudentSubmissions", fields: [studentId], references: [id])
+  studentId    String
+  fileUrl      String
+  submittedAt  DateTime         @default(now())
+  status       SubmissionStatus @default(SUBMITTED)
+  grade        Int?
+  feedback     String?
+  gradedAt     DateTime?
+  gradedBy     User?            @relation("GraderSubmissions", fields: [gradedById], references: [id])
+  gradedById   String?
+
+  @@unique([assignmentId, studentId])
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  GRADED
 }
