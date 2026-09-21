@@ -32,8 +32,12 @@ export interface AssignmentItem {
 }
 
 export interface MySubmission {
-  fileName: string;
+  id: string;
+  status: "SUBMITTED" | "GRADED";
   submittedAt: string;
+  grade?: number | null;
+  feedback?: string | null
+  fileName?: string;
 }
 
 export interface StudentWeekData {
@@ -163,10 +167,10 @@ export function StudentWeekCard({ week }: { week: StudentWeekData }) {
                   return (
                     <li key={doc.id}>
                       <a
-                        href={doc.fileUrl}
-                        className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 hover:bg-gray-50 transition-colors group"
-                        style={{ borderColor: colors.border }}
-                      >
+                         href={`/api/materials/${doc.id}/download`}
+                         className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 hover:bg-gray-50 transition-colors group"
+                         style={{ borderColor: colors.border }}
+>
                         <span className="flex items-center gap-2.5 min-w-0">
                           <Icon size={18} className="text-gray-500 flex-shrink-0" />
                           <span className="text-sm text-gray-800 truncate">{doc.title}</span>
@@ -196,13 +200,22 @@ export function StudentWeekCard({ week }: { week: StudentWeekData }) {
               </div>
 
               <p className="text-sm text-gray-700 mb-4">{week.assignment.description}</p>
-
-              {isSubmitted ? (
-                <div className="flex items-center gap-2 text-sm font-medium" style={{ color: colors.success }}>
-                  <CheckCircle2 size={16} />
-                  Submitted
-                  {fileName ? ` — ${fileName}` : week.mySubmission ? ` — ${week.mySubmission.fileName}` : ""}
-                </div>
+{isSubmitted ? (
+  <div>
+    <div className="flex items-center gap-2 text-sm font-medium" style={{ color: colors.success }}>
+      <CheckCircle2 size={16} />
+      Submitted
+      {fileName ? ` — ${fileName}` : ""}
+    </div>
+    {week.mySubmission?.status === "GRADED" && (
+      <div className="mt-2 text-sm">
+        <p className="font-semibold text-gray-900">Grade: {week.mySubmission.grade}/100</p>
+        {week.mySubmission.feedback && (
+          <p className="text-gray-600 mt-1">{week.mySubmission.feedback}</p>
+        )}
+      </div>
+    )}
+  </div>
               ) : isPastDue ? (
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                   <Lock size={15} />

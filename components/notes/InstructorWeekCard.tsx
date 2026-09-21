@@ -33,6 +33,8 @@ export interface SubmissionItem {
   id: string;
   studentName: string;
   submittedAt: string | null; // null = not submitted yet
+  status: "SUBMITTED" | "GRADED" | null; // null = not submitted yet
+  grade: number | null;
 }
 
 export interface InstructorWeekData {
@@ -70,7 +72,7 @@ export function InstructorWeekCard({ week }: { week: InstructorWeekData }) {
   const [aDueDate, setADueDate] = useState("");
   const [aDueTime, setADueTime] = useState("23:59");
 
-  const submittedCount = week.submissions.filter((s) => s.submittedAt).length;
+  const submittedCount = week.submissions.filter((s) => s.status !== null).length;
   const dueDate = assignment ? new Date(assignment.dueDate) : null;
   const isPastDue = !!dueDate && Date.now() > dueDate.getTime();
 
@@ -341,11 +343,16 @@ export function InstructorWeekCard({ week }: { week: InstructorWeekData }) {
                   {week.submissions.map((s) => (
                     <li key={s.id} className="flex items-center justify-between px-3 py-2.5">
                       <span className="text-sm text-gray-800">{s.studentName}</span>
-                      {s.submittedAt ? (
-                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: colors.success }}>
-                          <CheckCircle2 size={14} />
-                          {new Date(s.submittedAt).toLocaleDateString()}
-                        </span>
+                      {s.status === "GRADED" ? (
+                        <span className="text-sm font-semibold text-gray-900">{s.grade}/100</span>
+                      ) : s.submittedAt ? (
+                        <button
+                          type="button"
+                          className="text-xs font-medium px-2.5 py-1 rounded-md border"
+                          style={{ borderColor: colors.border, color: colors.red }}
+                        >
+                          Grade
+                        </button>
                       ) : (
                         <span className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Circle size={14} /> Not submitted

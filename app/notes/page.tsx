@@ -45,13 +45,24 @@ export default async function NotesPage() {
     );
   }
 
-  const weeks = await prisma.week.findMany({
-    where: { cohortId: user.cohortId },
-    orderBy: { weekNumber: "asc" },
-    include: { materials: true },
-  });
+const weeks = await prisma.week.findMany({
+  where: { cohortId: user.cohortId },
+  orderBy: { weekNumber: "asc" },
+  include: {
+    materials: true,
+    assignments: {
+      include: {
+        submissions: { where: { studentId: session.user.id } },
+      },
+    },
+  },
+});
 
-  const weekData: StudentWeekData[] = weeks.map((week) => ({
+const weekData: StudentWeekData[] = weeks.map((week) => {
+  const assignment = week.assignments[0] ?? null;
+  const mySubmission = assignment?.submissions[0] ?? null;
+
+  return {
     id: week.id,
     weekNumber: week.weekNumber,
     topic: week.topic,
@@ -59,34 +70,16 @@ export default async function NotesPage() {
     leader: MOCK_META[week.weekNumber]?.leader ?? null,
     passage: MOCK_META[week.weekNumber]?.passage ?? null,
     materials: week.materials.map((m) => ({ id: m.id, type: m.type, title: m.title, fileUrl: m.fileUrl })),
-    assignment: MOCK_ASSIGNMENTS[week.weekNumber]
-      ? { id: `mock-${week.weekNumber}`, ...MOCK_ASSIGNMENTS[week.weekNumber] }
+    assignment: assignment
+      ? {
+          id: assignment.id,
+          title: assignment.title,
+          description: assignment.instructions ?? "",
+          dueDate: assignment.dueDate.toISOString(),
+        }
       : null,
-    mySubmission: null,
-  }));
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.cream }}>
-      <NotesHero
-        eyebrow="CITAM — Small Group Study Notes"
-        title="This Term's Study Series"
-        subtitle="Catch up on this week's notes and teaching video, then submit your assignment before the deadline."
-      />
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="py-6 border-b-2" style={{ borderColor: colors.black }}>
-          <p className="text-sm text-gray-500">Tap a week to view notes and assignments</p>
-        </div>
-
-        {weekData.length === 0 ? (
-          <p className="text-sm text-gray-500 py-8">No weeks have been posted yet.</p>
-        ) : (
-          <div className="divide-y" style={{ borderColor: colors.border }}>
-            {weekData.map((week) => (
-              <StudentWeekCard key={week.id} week={week} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+    mySubmission: mySubmission
+      ? {isSubmitted && week.mySubmission?.status === "GRADED" && " — graded"}
+      : null,
+  };
+});
