@@ -3,24 +3,51 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock, User, Mail } from "lucide-react";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Something went wrong. Please try again.");
+        return;
+      }
+
+      // Auto sign-in after successful registration
       const result = await signIn("credentials", {
         email,
         password,
@@ -28,7 +55,8 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password. Please try again.");
+        // Registration succeeded but auto sign-in failed — send to login
+        router.push("/login");
       } else {
         router.push("/lessons");
       }
@@ -52,7 +80,6 @@ export default function LoginPage() {
           background: "linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 60%, #1c0a0a 100%)",
         }}
       >
-        {/* Subtle texture overlay */}
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -76,10 +103,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div
-            className="w-12 h-0.5"
-            style={{ backgroundColor: "#E02020" }}
-          />
+          <div className="w-12 h-0.5" style={{ backgroundColor: "#E02020" }} />
 
           <p className="text-gray-400 text-base leading-relaxed max-w-xs">
             Equipping and developing transformational leaders for kingdom work.
@@ -93,7 +117,6 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-20 h-20 relative mb-3">
-              {/* Fallback logo placeholder if image isn't available */}
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-lg"
                 style={{ backgroundColor: "#E02020" }}
@@ -108,9 +131,9 @@ export default function LoginPage() {
 
           {/* Heading */}
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
             <p className="mt-2 text-sm text-gray-500">
-              Please enter your details to access your dashboard
+              Sign up to get started with your dashboard
             </p>
           </div>
 
@@ -138,14 +161,14 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Sign in with Google
+            Sign up with Google
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-xs text-gray-400 tracking-widest font-medium uppercase">
-              or continue with email
+              or sign up with email
             </span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
@@ -160,41 +183,53 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Email Address
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Full Name
               </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition"
-                style={{ "--tw-ring-color": "#E02020" } as React.CSSProperties}
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <User size={16} />
+                </span>
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                  style={{ "--tw-ring-color": "#E02020" } as React.CSSProperties}
+                />
+              </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium transition-colors"
-                  style={{ color: "#E02020" }}
-                >
-                  Forgot password?
-                </Link>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email Address
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Mail size={16} />
+                </span>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                  style={{ "--tw-ring-color": "#E02020" } as React.CSSProperties}
+                />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <Lock size={16} />
@@ -202,7 +237,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -221,24 +256,50 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Lock size={16} />
+                </span>
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition"
+                  style={{ "--tw-ring-color": "#E02020" } as React.CSSProperties}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-lg py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
               style={{ backgroundColor: "#111111" }}
             >
-              {loading ? "Signing in…" : "Sign in to SMLD"}
+              {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-semibold transition-colors"
-              style={{ color: "#E02020" }}
-            >
-              Sign up
+            Already have an account?{" "}
+            <Link href="/login" className="font-semibold transition-colors" style={{ color: "#E02020" }}>
+             Log in
             </Link>
           </p>
         </div>
