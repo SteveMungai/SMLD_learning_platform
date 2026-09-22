@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 // Prisma 7 requires a driver adapter — PrismaClient no longer connects
 // directly using just a `url` string in the schema.
 const adapter = new PrismaPg({
-  connectionString: process.env.DIRECT_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 
