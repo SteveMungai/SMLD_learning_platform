@@ -2,94 +2,113 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { StudentWeekCard, type StudentWeekData } from "@/components/notes/StudentWeekCard";
+import { InstructorWeekCard, type InstructorWeekData, type SubmissionItem } from "@/components/notes/InstructorWeekCard";
 import { NotesHero, colors } from "@/components/notes/shared";
 
-const MOCK_META: Record<number, { leader?: string; passage?: string }> = {
-  1: { leader: "Pastor James", passage: "Hebrews 10:24-25" },
-  2: { leader: "Pastor James", passage: "John 1:1-18" },
-};
-
-export default async function NotesPage() {
+export default async function InstructorNotesPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { cohortId: true },
+    where: { UserID: session.user.id },
+    select: { Role: true },
   });
+  if (user?.Role === "STUDENT") redirect("/notes");
 
-  if (!user?.cohortId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: colors.cream }}>
-        <p className="text-gray-600 text-sm">You are not currently assigned to a cohort.</p>
-      </div>
-    );
-  }
-
-  const weeks = await prisma.week.findMany({
-    where: { cohortId: user.cohortId },
-    orderBy: { weekNumber: "asc" },
+  // No instructor-to-cohort relation exists yet, so every instructor
+  // currently sees every cohort's lessons. Revisit once that's modeled.
+  const lessons = await prisma.lesson.findMany({
+    orderBy: [{ course: { CohortID: "asc" } }, { SequenceOrder: "asc" }],
     include: {
-      materials: true,
+      video: true,
+      audio: true,
+      notes: true,
+      course: {
+        include: {
+          cohort: {
+            include: {
+              memberships: {
+                where: { Status: "ACTIVE" },
+                include: { user: true },
+              },
+            },
+          },
+        },
+      },
       assignments: {
         include: {
-          submissions: { where: { studentId: session.user.id } },
+          submissions: {
+            include: { student: true, grade: true },
+          },
         },
       },
     },
   });
 
-  const weekData: StudentWeekData[] = weeks.map((week) => {
-    const assignment = week.assignments[0] ?? null;
-    const mySubmission = assignment?.submissions[0] ?? null;
+  const weekData: InstructorWeekData[] = lessons.map((lesson, index) => {
+    const assignment = lesson.assignments[0] ?? null;
+    const roster = lesson.course.cohort.memberships.map((m) => m.user);
+
+    const submissions: SubmissionItem[] = roster.map((student) => {
+      const match = assignment?.submissions.find((s) => s.StudentID === student.UserID);
+      return {
+        id: match?.SubmissionID ?? `pending-${student.UserID}`,
+        studentName: student.FullName ?? "Unnamed student",
+        submittedAt: match?.SubmittedAt?.toISOString() ?? null,
+        status: match ? (match.grade?.Status === "COMPLETE" ? "GRADED" : "SUBMITTED") : null,
+        grade: match?.grade?.TotalScore ?? null,
+      };
+    });
+
+    const materials = [
+      lesson.video && {
+        id: lesson.video.VideoID,
+        type: "VIDEO" as const,
+        title: lesson.video.Title,
+        fileUrl: lesson.video.YoutubeLink,
+      },
+      ...lesson.notes.map((n) => ({
+        id: n.NoteID,
+        type: "NOTES" as const,
+        title: n.Title,
+        fileUrl: n.FileLink ?? "",
+      })),
+    ].filter(Boolean) as InstructorWeekData["materials"];
 
     return {
-      id: week.id,
-      weekNumber: week.weekNumber,
-      topic: week.topic,
-      description: week.description,
-      leader: MOCK_META[week.weekNumber]?.leader ?? null,
-      passage: MOCK_META[week.weekNumber]?.passage ?? null,
-      materials: week.materials.map((m) => ({ id: m.id, type: m.type, title: m.title, fileUrl: m.fileUrl })),
+      id: lesson.LessonID,
+      weekNumber: index + 1,
+      topic: lesson.Title,
+      description: null,
+      leader: null,
+      passage: null,
+      materials,
       assignment: assignment
         ? {
-            id: assignment.id,
-            title: assignment.title,
-            description: assignment.instructions ?? "",
-            dueDate: assignment.dueDate.toISOString(),
+            id: assignment.AssignmentID,
+            title: assignment.Title,
+            description: assignment.Description ?? "",
+            dueDate: assignment.DeadlineDate.toISOString(),
           }
         : null,
-      mySubmission: mySubmission
-        ? {
-            id: mySubmission.id,
-            status: mySubmission.status,
-            submittedAt: mySubmission.submittedAt.toISOString(),
-            grade: mySubmission.grade,
-            feedback: mySubmission.feedback,
-          }
-        : null,
+      submissions,
     };
   });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: colors.cream }}>
       <NotesHero
-        eyebrow="CITAM — Small Group Study Notes"
+        eyebrow="CITAM — Instructor Dashboard"
         title="This Term's Study Series"
-        subtitle="Catch up on this week's notes and teaching video, then submit your assignment before the deadline."
+        subtitle="Add weekly notes and videos, post assignments with a due date, and see who's submitted."
       />
       <div className="max-w-3xl mx-auto px-4">
-        <div className="py-6 border-b-2" style={{ borderColor: colors.black }}>
-          <p className="text-sm text-gray-500">Tap a week to view notes and assignments</p>
-        </div>
-
         {weekData.length === 0 ? (
-          <p className="text-sm text-gray-500 py-8">No weeks have been posted yet.</p>
+          <p className="text-sm text-gray-500 py-8">No lessons have been posted yet.</p>
         ) : (
           <div className="divide-y" style={{ borderColor: colors.border }}>
             {weekData.map((week) => (
-              <StudentWeekCard key={week.id} week={week} />
+              <InstructorWeekCard key={week.id} week={week} />
             ))}
           </div>
         )}

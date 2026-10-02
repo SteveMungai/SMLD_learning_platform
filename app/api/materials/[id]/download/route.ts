@@ -14,27 +14,38 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const material = await prisma.material.findUnique({
-    where: { id },
-    include: { week: { include: { cohort: true } } },
+  const note = await prisma.note.findUnique({
+    where: { NoteID: id },
+    include: { lesson: { include: { course: true } } },
   });
 
-  if (!material) {
+  if (!note) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { cohortId: true, role: true },
+  const membership = await prisma.cohortMembership.findFirst({
+    where: {
+      UserID: session.user.id,
+      CohortID: note.lesson.course.CohortID,
+      Status: "ACTIVE",
+    },
   });
 
-  const allowed =
-    user?.role !== "STUDENT" || user?.cohortId === material.week.cohortId;
+  const user = await prisma.user.findUnique({
+    where: { UserID: session.user.id },
+    select: { Role: true },
+  });
+
+  const allowed = user?.Role !== "STUDENT" || !!membership;
 
   if (!allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (!note.FileLink) {
+    return NextResponse.json({ error: "No file attached" }, { status: 404 });
+  }
+
   // If using R2: generate a signed URL here and redirect
-  return NextResponse.redirect(material.fileUrl);
+  return NextResponse.redirect(note.FileLink);
 }

@@ -13,8 +13,6 @@ export default async function GradePage({ params }: PageProps) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  // Grading is instructor/admin-only — no logged-out preview for this page,
-  // unlike the student-facing questions page.
   if (!session?.user || (role !== "INSTRUCTOR" && role !== "ADMIN")) {
     redirect("/login");
   }
