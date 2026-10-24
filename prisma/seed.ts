@@ -97,6 +97,17 @@ async function main() {
     },
   });
 
+    await prisma.lesson.upsert({
+    where: { LessonID: "test-lesson-2" },
+    update: {},
+    create: {
+      LessonID: "test-lesson-2",
+      CourseID: course.CourseID,
+      Title: "Walking in the Word",
+      SequenceOrder: 2,
+    },
+  });
+
   await prisma.video.upsert({
     where: { LessonID: lesson1.LessonID },
     update: {},

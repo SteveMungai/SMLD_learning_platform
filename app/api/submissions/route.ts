@@ -30,6 +30,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Malformed answers payload." }, { status: 400 });
   }
 
+    const assignment = await prisma.assignment.findUnique({
+    where: { AssignmentID: assignmentId },
+    include: { questions: { select: { QuestionID: true } } },
+  });
+  if (!assignment) {
+    return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
+  }
+
+  if (new Date() > assignment.DeadlineDate) {
+    return NextResponse.json({ error: "The deadline has passed." }, { status: 403 });
+  }
+
+  const membership = await prisma.cohortMembership.findFirst({
+    where: { UserID: userId, CohortID: assignment.CohortID, Status: "ACTIVE" },
+  });
+  if (!membership) {
+    return NextResponse.json({ error: "This assignment isn't for your cohort." }, { status: 403 });
+  }
+
+  const validIds = new Set(assignment.questions.map((q) => q.QuestionID));
+  if (answers.some((a) => !validIds.has(a.questionId))) {
+    return NextResponse.json({ error: "Answers don't match this assignment." }, { status: 400 });
+  }
+
+  const existing = await prisma.submission.findUnique({
+    where: { AssignmentID_StudentID: { AssignmentID: assignmentId, StudentID: userId } },
+    include: { grade: true },
+  });
+  if (existing?.grade?.Status === "COMPLETE") {
+    return NextResponse.json({ error: "This submission has already been graded." }, { status: 409 });
+  }
 
 
   const receiptCode = `SMLD-${Date.now().toString(36).toUpperCase()}`;

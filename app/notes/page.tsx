@@ -22,7 +22,7 @@ export default async function NotesPage() {
     );
   }
 
-  const lessons = await prisma.lesson.findMany({
+    const lessons = await prisma.lesson.findMany({
     where: { course: { CohortID: membership.CohortID } },
     orderBy: { SequenceOrder: "asc" },
     include: {
@@ -31,15 +31,15 @@ export default async function NotesPage() {
       notes: true,
       assignments: {
         include: {
+          questions: { orderBy: { SequenceOrder: "asc" } },
           submissions: {
             where: { StudentID: session.user.id },
-            include: { grade: true },
+            include: { grade: true, answers: true },
           },
         },
       },
     },
   });
-
   const weekData: StudentWeekData[] = lessons.map((lesson, index) => {
     const assignment = lesson.assignments[0] ?? null;
     const mySubmission = assignment?.submissions[0] ?? null;
@@ -67,12 +67,18 @@ export default async function NotesPage() {
       leader: null,
       passage: null,
       materials,
-      assignment: assignment
+            assignment: assignment
         ? {
             id: assignment.AssignmentID,
             title: assignment.Title,
             description: assignment.Description ?? "",
             dueDate: assignment.DeadlineDate.toISOString(),
+            questions: assignment.questions.map((q) => ({
+              id: q.QuestionID,
+              text: q.QuestionText,
+              maxScore: q.MaxScore,
+              type: q.QuestionType,
+            })),
           }
         : null,
       mySubmission: mySubmission
@@ -81,7 +87,14 @@ export default async function NotesPage() {
             status: mySubmission.grade?.Status === "COMPLETE" ? "GRADED" : "SUBMITTED",
             submittedAt: mySubmission.SubmittedAt?.toISOString() ?? "",
             grade: mySubmission.grade?.TotalScore ?? null,
+            maxScore: mySubmission.grade?.MaxPossibleScore ?? null,
             feedback: mySubmission.grade?.OverallFeedback ?? null,
+            answers: mySubmission.answers.map((a) => ({
+              questionId: a.QuestionID,
+              text: a.AnswerText ?? "",
+              score: a.ScoreAwarded,
+              feedback: a.Feedback,
+            })),
           }
         : null,
     };
