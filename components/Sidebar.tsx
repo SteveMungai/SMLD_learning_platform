@@ -18,8 +18,8 @@ type SidebarProps = {
 const BASE_LINKS = [
   { href: "/Video", label: "Video", icon: PlayCircle },
   { href: "/audio", label: "Audio", icon: Volume2 },
-  { href: "/lessons", label: "Notes", icon: BookOpen },
-  { href: "/StudentQuestionsView", label: "Questions", icon: ClipboardList },
+  { href: "/notes", label: "Notes", icon: BookOpen },
+  { href: "/questions", label: "Questions", icon: ClipboardList },
 ];
 
 const ADMIN_LINK = { href: "/admin", label: "Admin", icon: ShieldCheck };
