@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  PlayCircle,
   BookOpen,
   ClipboardList,
-  Award,
-  CalendarCheck,
+  Volume2,
   ShieldCheck,
 } from "lucide-react";
 
@@ -17,11 +16,10 @@ type SidebarProps = {
 };
 
 const BASE_LINKS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/lessons", label: "lessons", icon: BookOpen },
-  { href: "/StudentQuestions", label: "Questions", icon: ClipboardList },
-  { href: "/grades", label: "Grades", icon: Award },
-  { href: "/attendance", label: "Attendance", icon: CalendarCheck },
+  { href: "/Video", label: "Video", icon: PlayCircle },
+  { href: "/audio", label: "Audio", icon: Volume2 },
+  { href: "/lessons", label: "Notes", icon: BookOpen },
+  { href: "/StudentQuestionsView", label: "Questions", icon: ClipboardList },
 ];
 
 const ADMIN_LINK = { href: "/admin", label: "Admin", icon: ShieldCheck };
