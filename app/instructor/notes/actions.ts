@@ -98,9 +98,12 @@ export async function postAssignment(input: {
 
   const lesson = await prisma.lesson.findUnique({
     where: { LessonID: input.lessonId },
-    include: { course: true, assignments: { select: { AssignmentID: true } } },
+    include: { course: true, assignments: { select: { AssignmentID: true, Status: true } } },
   });
   if (!lesson) return { error: "Lesson not found." };
+  if (lesson.assignments.some((a) => a.Status === "DRAFT")) {
+    return { error: "This lesson has a draft assignment. Finish and publish it from the Questions page." };
+  }
   if (lesson.assignments.length > 0) return { error: "This lesson already has an assignment." };
 
   await prisma.assignment.create({
@@ -110,6 +113,7 @@ export async function postAssignment(input: {
       Title: title,
       Description: input.description.trim() || null,
       DeadlineDate: due,
+      Status: "PUBLISHED",
       MaxScore: cleaned.reduce((sum, q) => sum + q.MaxScore, 0),
       questions: { create: cleaned },
     },

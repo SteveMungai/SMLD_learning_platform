@@ -300,10 +300,10 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CohortMembership" ADD CONSTRAINT "CohortMembership_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CohortMembership" ADD CONSTRAINT "CohortMembership_CohortID_fkey" FOREIGN KEY ("CohortID") REFERENCES "Cohort"("CohortID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CohortMembership" ADD CONSTRAINT "CohortMembership_CohortID_fkey" FOREIGN KEY ("CohortID") REFERENCES "Cohort"("CohortID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CohortMembership" ADD CONSTRAINT "CohortMembership_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Course" ADD CONSTRAINT "Course_CohortID_fkey" FOREIGN KEY ("CohortID") REFERENCES "Cohort"("CohortID") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -324,10 +324,10 @@ ALTER TABLE "ZoomMeeting" ADD CONSTRAINT "ZoomMeeting_LessonID_fkey" FOREIGN KEY
 ALTER TABLE "Note" ADD CONSTRAINT "Note_LessonID_fkey" FOREIGN KEY ("LessonID") REFERENCES "Lesson"("LessonID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_LessonID_fkey" FOREIGN KEY ("LessonID") REFERENCES "Lesson"("LessonID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_CohortID_fkey" FOREIGN KEY ("CohortID") REFERENCES "Cohort"("CohortID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_CohortID_fkey" FOREIGN KEY ("CohortID") REFERENCES "Cohort"("CohortID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Assignment" ADD CONSTRAINT "Assignment_LessonID_fkey" FOREIGN KEY ("LessonID") REFERENCES "Lesson"("LessonID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Question" ADD CONSTRAINT "Question_AssignmentID_fkey" FOREIGN KEY ("AssignmentID") REFERENCES "Assignment"("AssignmentID") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -339,31 +339,31 @@ ALTER TABLE "Submission" ADD CONSTRAINT "Submission_AssignmentID_fkey" FOREIGN K
 ALTER TABLE "Submission" ADD CONSTRAINT "Submission_StudentID_fkey" FOREIGN KEY ("StudentID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SubmissionAnswer" ADD CONSTRAINT "SubmissionAnswer_SubmissionID_fkey" FOREIGN KEY ("SubmissionID") REFERENCES "Submission"("SubmissionID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SubmissionAnswer" ADD CONSTRAINT "SubmissionAnswer_GradedByID_fkey" FOREIGN KEY ("GradedByID") REFERENCES "User"("UserID") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SubmissionAnswer" ADD CONSTRAINT "SubmissionAnswer_QuestionID_fkey" FOREIGN KEY ("QuestionID") REFERENCES "Question"("QuestionID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SubmissionAnswer" ADD CONSTRAINT "SubmissionAnswer_GradedByID_fkey" FOREIGN KEY ("GradedByID") REFERENCES "User"("UserID") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "SubmissionAnswer" ADD CONSTRAINT "SubmissionAnswer_SubmissionID_fkey" FOREIGN KEY ("SubmissionID") REFERENCES "Submission"("SubmissionID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_SubmissionID_fkey" FOREIGN KEY ("SubmissionID") REFERENCES "Submission"("SubmissionID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Grade" ADD CONSTRAINT "Grade_SubmissionID_fkey" FOREIGN KEY ("SubmissionID") REFERENCES "Submission"("SubmissionID") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Grade" ADD CONSTRAINT "Grade_FinalizedByID_fkey" FOREIGN KEY ("FinalizedByID") REFERENCES "User"("UserID") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Grade" ADD CONSTRAINT "Grade_SubmissionID_fkey" FOREIGN KEY ("SubmissionID") REFERENCES "Submission"("SubmissionID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_LessonID_fkey" FOREIGN KEY ("LessonID") REFERENCES "Lesson"("LessonID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_MarkedByID_fkey" FOREIGN KEY ("MarkedByID") REFERENCES "User"("UserID") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AdminLog" ADD CONSTRAINT "AdminLog_AdminID_fkey" FOREIGN KEY ("AdminID") REFERENCES "User"("UserID") ON DELETE CASCADE ON UPDATE CASCADE;

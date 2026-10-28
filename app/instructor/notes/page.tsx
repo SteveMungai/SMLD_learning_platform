@@ -38,6 +38,8 @@ export default async function InstructorNotesPage() {
       assignments: {
         include: {
           submissions: {
+            // Students' autosaved drafts aren't submissions yet.
+            where: { Status: { in: ["SUBMITTED", "LATE"] } },
             include: { student: true, grade: true },
           },
         },
@@ -46,7 +48,8 @@ export default async function InstructorNotesPage() {
   });
 
   const weekData: InstructorWeekData[] = lessons.map((lesson, index) => {
-    const assignment = lesson.assignments[0] ?? null;
+    // A DRAFT assignment isn't "posted" yet; it's finished on the Questions page.
+    const assignment = lesson.assignments.find((a) => a.Status === "PUBLISHED") ?? null;
     const roster = lesson.course.cohort.memberships.map((m) => m.user);
 
     const submissions: SubmissionItem[] = roster.map((student) => {
@@ -88,7 +91,7 @@ export default async function InstructorNotesPage() {
             id: assignment.AssignmentID,
             title: assignment.Title,
             description: assignment.Description ?? "",
-            dueDate: assignment.DeadlineDate.toISOString(),
+            dueDate: assignment.DeadlineDate?.toISOString() ?? "",
           }
         : null,
       submissions,

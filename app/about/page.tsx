@@ -87,7 +87,7 @@ const MOCK_CONTRIBUTORS: ContributorProfile[] = [
 
   {
     id: "contributor-7",
-    name: " Muthama",
+    name: " Maithya Muthama",
     title: "Senior Pastor",
     bio: "Oversees curriculum development and academic quality assurance.",
     avatarUrl: null,

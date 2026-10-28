@@ -13,7 +13,8 @@ export type AssignmentData = {
   CohortID: string;
   Title: string;
   Description: string | null;
-  DeadlineDate: string; // ISO string — Dates aren't serializable server→client
+  DeadlineDate: string | null; // ISO string — null while a DRAFT has no deadline yet
+  Status: "DRAFT" | "PUBLISHED";
   MaxScore: number | null;
   questions: QuestionData[];
 };
@@ -37,6 +38,20 @@ export type SubmissionData = {
   Status: "DRAFT" | "SUBMITTED" | "LATE";
   ReceiptCode: string | null;
   answers: SubmissionAnswerData[];
+  // Present once a lecturer has graded the submission.
+  grade?: {
+    TotalScore: number | null;
+    MaxPossibleScore: number | null;
+    OverallFeedback: string | null;
+    Status: "PENDING" | "COMPLETE";
+  } | null;
+};
+
+export type LessonInfo = {
+  LessonID: string;
+  Title: string;
+  SequenceOrder: number;
+  CourseTitle: string;
 };
 
 //Grading-specific shapes 

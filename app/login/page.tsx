@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 export default function LoginPage() {
+  // useSearchParams needs a Suspense boundary during static rendering.
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const resetSuccess = useSearchParams().get("reset") === "success";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -149,6 +159,12 @@ export default function LoginPage() {
             </span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
+
+          {resetSuccess && !error && (
+            <div className="mb-4 rounded-md bg-green-50 border border-green-200 px-4 py-3">
+              <p className="text-sm text-green-800">Your password was updated. Please sign in with the new one.</p>
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

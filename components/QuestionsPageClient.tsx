@@ -7,12 +7,13 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import LecturerQuestionsView from "@/components/Lecturerquestions";
 import StudentQuestionsView from "@/components/StudentQuestions";
-import type { AssignmentData, SubmissionData } from "@/components/types";
+import type { AssignmentData, SubmissionData, LessonInfo } from "@/components/types";
 
 type Props = {
   isAuthenticated: boolean;
   role: "STUDENT" | "INSTRUCTOR" | "ADMIN" | undefined;
   lessonId: string;
+  lesson: LessonInfo | null;
   assignment: AssignmentData | null;
   existingSubmission: SubmissionData | null;
 };
@@ -21,6 +22,7 @@ export default function QuestionsPageClient({
   isAuthenticated,
   role,
   lessonId,
+  lesson,
   assignment,
   existingSubmission,
 }: Props) {
@@ -41,7 +43,16 @@ export default function QuestionsPageClient({
         <main className="flex-1 px-6 py-16">
           <div className="max-w-3xl flex items-center justify-between mb-10">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Assignment</h1>
+              {lesson && (
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#E02020" }}>
+                  <Link href="/questions" className="hover:underline">Questions</Link>
+                  <span style={{ color: "#d1d5db" }}> / </span>
+                  <span style={{ color: "#6b7280" }}>{lesson.CourseTitle}</span>
+                </p>
+              )}
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">
+                {lesson ? `Lesson ${lesson.SequenceOrder}: ${lesson.Title}` : "Assignment"}
+              </h1>
               <p className="text-sm" style={{ color: "#6b7280" }}>
                 {effectiveRole === "INSTRUCTOR"
                   ? "Set up questions, deadline, and scoring for students."

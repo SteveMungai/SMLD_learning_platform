@@ -30,10 +30,13 @@ export default async function NotesPage() {
       audio: true,
       notes: true,
       assignments: {
+        // Lecturer drafts are never shown to students.
+        where: { Status: "PUBLISHED" },
         include: {
           questions: { orderBy: { SequenceOrder: "asc" } },
           submissions: {
-            where: { StudentID: session.user.id },
+            // Autosaved drafts aren't submissions yet.
+            where: { StudentID: session.user.id, Status: { in: ["SUBMITTED", "LATE"] } },
             include: { grade: true, answers: true },
           },
         },
@@ -72,7 +75,7 @@ export default async function NotesPage() {
             id: assignment.AssignmentID,
             title: assignment.Title,
             description: assignment.Description ?? "",
-            dueDate: assignment.DeadlineDate.toISOString(),
+            dueDate: assignment.DeadlineDate?.toISOString() ?? "",
             questions: assignment.questions.map((q) => ({
               id: q.QuestionID,
               text: q.QuestionText,
