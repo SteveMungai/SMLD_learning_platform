@@ -23,6 +23,7 @@ type QuestionDraft = {
 const cardStyle = { background: "#ffffff", border: "0.5px solid #e5e7eb" };
 const inputStyle = { background: "#ffffff", border: "0.5px solid #e5e7eb", color: "#111111" };
 
+// <input type="datetime-local"> works in the browser's local time, so convert explicitly.
 const pad = (n: number) => String(n).padStart(2, "0");
 function isoToLocalInput(iso: string | null | undefined) {
   if (!iso) return "";
@@ -35,12 +36,15 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
   const [title, setTitle] = useState(assignment?.Title ?? "");
   const [deadline, setDeadline] = useState(isoToLocalInput(assignment?.DeadlineDate));
   const [description, setDescription] = useState(assignment?.Description ?? "");
+  const [acceptLate, setAcceptLate] = useState(assignment?.AcceptLate ?? false);
   const [questions, setQuestions] = useState<QuestionDraft[]>(() =>
     assignment?.questions.length
       ? assignment.questions.map((q) => ({ key: q.QuestionID, QuestionText: q.QuestionText, QuestionType: q.QuestionType, MaxScore: q.MaxScore }))
       : [{ key: crypto.randomUUID(), QuestionText: "", QuestionType: "SHORT_ANSWER", MaxScore: 10 }]
   );
 
+  // Database IDs by question key. Kept in a ref (not state) so learning a new ID after a
+  // save doesn't itself count as an edit and trigger another autosave.
   const ids = useRef<Record<string, string>>(
     Object.fromEntries((assignment?.questions ?? []).map((q) => [q.QuestionID, q.QuestionID]))
   );
@@ -53,7 +57,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
   const isPublished = status === "PUBLISHED";
   const totalMaxScore = questions.reduce((sum, q) => sum + (Number(q.MaxScore) || 0), 0);
 
-  type FormData = { title: string; deadline: string; description: string; questions: QuestionDraft[] };
+  type FormData = { title: string; deadline: string; description: string; acceptLate: boolean; questions: QuestionDraft[] };
 
   async function persist(form: FormData, publish: boolean) {
     const res = await fetch("/api/assignments", {
@@ -65,6 +69,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
         title: form.title,
         description: form.description,
         deadlineDate: localInputToIso(form.deadline),
+        acceptLate: form.acceptLate,
         questions: form.questions.map((q) => ({
           id: ids.current[q.key] ?? null,
           QuestionText: q.QuestionText,
@@ -86,7 +91,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
   // Autosave writes drafts only. A published assignment is live to students, so edits to it
   // are saved explicitly with "Save changes" instead of on every keystroke.
   const autosave = useAutosave<FormData>({
-    data: { title, deadline, description, questions },
+    data: { title, deadline, description, acceptLate, questions },
     enabled: !isPreview && !isPublished,
     save: (form) => persist(form, false),
   });
@@ -111,7 +116,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
     setPublishing(true);
     try {
       if (!isPublished) await autosave.flush(); // let any in-flight draft save land first
-      await persist({ title, deadline, description, questions }, true);
+      await persist({ title, deadline, description, acceptLate, questions }, true);
       autosave.markSaved();
       setNotice(isPublished ? "Changes saved." : "Assignment published — students in this cohort can now see it.");
     } catch (err) {
@@ -184,6 +189,16 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
             />
           </div>
         </div>
+
+        <label className="flex items-start gap-3 mb-5 text-sm cursor-pointer" style={{ color: "#374151" }}>
+          <input type="checkbox" checked={acceptLate} onChange={(e) => setAcceptLate(e.target.checked)} className="mt-0.5 h-4 w-4 accent-red-600" />
+          <span>
+            <span className="font-semibold">Accept late submissions</span>
+            <span className="block text-xs" style={{ color: "#9ca3af" }}>
+              Students can still hand in after the deadline. Their work is marked late so you can filter it and send makeup notices.
+            </span>
+          </span>
+        </label>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#9ca3af" }}>Description</label>

@@ -1,22 +1,22 @@
+import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import LessonsPageClient, { type CohortOption } from "@/components/LessonsPageClient";
 
+// The Lessons page only lists lessons. Opening one goes to /lessons/[lessonId]/video, where the
+// sidebar (Video · Notes · Questions) takes over.
 export default async function LessonsPage() {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-  const role = session?.user?.role;
+  // No valid session means nothing to show, so send people to log in instead of a blank list.
+  if (!session?.user?.id) redirect("/login");
+  const userId = session.user.id;
+  const role = session.user.role;
   const isStaff = role === "INSTRUCTOR" || role === "ADMIN";
 
   // Students see the cohorts they belong to; lecturers see all (no instructor-to-cohort relation yet).
-  // Logged-out visitors get an empty list rather than every cohort's lessons.
   const cohorts = await prisma.cohort.findMany({
-    where: isStaff
-      ? {}
-      : userId
-        ? { memberships: { some: { UserID: userId, Status: "ACTIVE" } } }
-        : { CohortID: "" },
+    where: isStaff ? {} : { memberships: { some: { UserID: userId, Status: "ACTIVE" } } },
     orderBy: { CohortName: "asc" },
     include: {
       courses: {
@@ -50,5 +50,5 @@ export default async function LessonsPage() {
     })),
   }));
 
-  return <LessonsPageClient cohorts={data} />;
+  return <LessonsPageClient cohorts={data} isStaff={isStaff} />;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { NAME_NOTICE, validateFullName } from "@/lib/names";
+
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -20,6 +22,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const nameCheck = validateFullName(name);
+    if (!nameCheck.ok) {
+      setError(nameCheck.error);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -202,6 +210,7 @@ export default function RegisterPage() {
                   style={{ "--tw-ring-color": "#E02020" } as React.CSSProperties}
                 />
               </div>
+              <p className="mt-1.5 text-xs text-gray-500">{NAME_NOTICE}</p>
             </div>
 
             <div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar, { LessonTabs } from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import LecturerQuestionsView from "@/components/Lecturerquestions";
 import StudentQuestionsView from "@/components/StudentQuestions";
@@ -38,14 +38,15 @@ export default function QuestionsPageClient({
 
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
         {/* Sidebar only renders for logged-in users */}
-        {isAuthenticated && <Sidebar role={role} />}
+        {isAuthenticated && <Sidebar lessonId={lessonId} role={role} />}
 
         <main className="flex-1 px-6 py-16">
+          {isAuthenticated && <LessonTabs lessonId={lessonId} />}
           <div className="max-w-3xl flex items-center justify-between mb-10">
             <div>
               {lesson && (
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#E02020" }}>
-                  <Link href="/questions" className="hover:underline">Questions</Link>
+                  <Link href="/lessons" className="hover:underline">Lessons</Link>
                   <span style={{ color: "#d1d5db" }}> / </span>
                   <span style={{ color: "#6b7280" }}>{lesson.CourseTitle}</span>
                 </p>

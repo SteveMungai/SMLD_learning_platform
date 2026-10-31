@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PlayCircle, Headphones, FileText, Video as VideoIcon, ChevronDown } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { AddLessonForm } from "@/components/lessons/AddLessonForm";
 
 export type LessonSummary = {
   LessonID: string;
@@ -47,7 +48,7 @@ function ContentBadge({ active, icon: Icon, label }: { active: boolean; icon: ty
   );
 }
 
-export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[] }) {
+export default function LessonsPageClient({ cohorts, isStaff = false }: { cohorts: CohortOption[]; isStaff?: boolean }) {
   const [selectedCohortId, setSelectedCohortId] = useState(cohorts[0]?.CohortID ?? "");
 
   const selectedCohort = useMemo(
@@ -73,13 +74,11 @@ export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[]
       <Navbar />
 
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
-        
-
         <main className="flex-1 px-6 py-16">
           <section className="max-w-3xl mb-10">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
             <p className="text-[15px] leading-relaxed" style={{ color: "#6b7280" }}>
-              Browse lessons by cohort. Click a lesson to view its questions.
+              Browse lessons by cohort. Click a lesson to open its video, notes and questions.
             </p>
           </section>
 
@@ -88,6 +87,7 @@ export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[]
             <select
               value={selectedCohortId}
               onChange={(e) => setSelectedCohortId(e.target.value)}
+              aria-label="Cohort"
               style={{ background: "#ffffff", border: "0.5px solid #e5e7eb", color: "#111111" }}
               className="appearance-none rounded-lg pl-4 pr-10 py-2.5 text-sm font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-600/20"
             >
@@ -105,15 +105,13 @@ export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[]
           </div>
 
           {/* Courses + lessons for the selected cohort */}
-          <div className="space-y-12">
+          <div className="space-y-12 max-w-3xl">
             {selectedCohort.courses.map((course) => (
               <section key={course.CourseID}>
-                <h2
-                  className="text-xl font-bold text-gray-900 mb-4 pb-2"
-                  style={{ borderBottom: "0.5px solid #e5e7eb" }}
-                >
-                  {course.Title}
-                </h2>
+                <div className="flex flex-wrap items-end justify-between gap-3 mb-4 pb-2" style={{ borderBottom: "0.5px solid #e5e7eb" }}>
+                  <h2 className="text-xl font-bold text-gray-900">{course.Title}</h2>
+                  {isStaff && <AddLessonForm courseId={course.CourseID} />}
+                </div>
 
                 <div className="space-y-3">
                   {[...course.lessons]
@@ -121,7 +119,7 @@ export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[]
                     .map((lesson) => (
                       <Link
                         key={lesson.LessonID}
-                        href={`/questions/${lesson.LessonID}`}
+                        href={`/lessons/${lesson.LessonID}/video`}
                         style={cardStyle}
                         className="flex items-center justify-between p-5 rounded-xl transition-all duration-200 hover:shadow-sm cursor-pointer"
                       >
@@ -143,6 +141,9 @@ export default function LessonsPageClient({ cohorts }: { cohorts: CohortOption[]
                         </div>
                       </Link>
                     ))}
+                  {course.lessons.length === 0 && (
+                    <p className="text-sm" style={{ color: "#9ca3af" }}>No lessons in this course yet.</p>
+                  )}
                 </div>
               </section>
             ))}

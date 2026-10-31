@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ALLOWED_TYPES, MAX_FILES, MAX_TOTAL_BYTES, checkFile, cleanFileName, extOf, formatSize, matchesSignature } from "@/lib/attachments";
 
 type AnswerInput = { questionId: string; answerText: string };
 
@@ -41,7 +42,8 @@ async function loadOpenAssignment(assignmentId: string, userId: string, answers:
   // Drafts belong to the lecturer; to a student they simply don't exist.
   if (!assignment || assignment.Status !== "PUBLISHED") throw new ApiError("Assignment not found.", 404);
 
-  if (assignment.DeadlineDate && new Date() > assignment.DeadlineDate) {
+  const pastDeadline = !!assignment.DeadlineDate && new Date() > assignment.DeadlineDate;
+  if (pastDeadline && !assignment.AcceptLate) {
     throw new ApiError("The deadline has passed.", 403);
   }
 
@@ -54,7 +56,7 @@ async function loadOpenAssignment(assignmentId: string, userId: string, answers:
   if (answers.some((a) => !validIds.has(a.questionId))) {
     throw new ApiError("Answers don't match this assignment.", 400);
   }
-  return assignment;
+  return { assignment, pastDeadline };
 }
 
 function parseAnswers(raw: unknown): AnswerInput[] {
@@ -65,7 +67,7 @@ function parseAnswers(raw: unknown): AnswerInput[] {
   }));
 }
 
-/** Final submission (multipart form, so file attachments can be added later). */
+/** Final submission (multipart form: answers JSON + optional files). */
 export async function POST(req: NextRequest) {
   try {
     const userId = await requireStudent();
@@ -82,40 +84,101 @@ export async function POST(req: NextRequest) {
       throw e instanceof ApiError ? e : new ApiError("Malformed answers payload.", 400);
     }
 
-    await loadOpenAssignment(assignmentId, userId, answers);
+    let removeIds: string[] = [];
+    try {
+      const raw = formData.get("removeAttachmentIds");
+      if (raw) removeIds = (JSON.parse(String(raw)) as unknown[]).map(String);
+    } catch {
+      throw new ApiError("Malformed attachment list.", 400);
+    }
+
+    const { pastDeadline } = await loadOpenAssignment(assignmentId, userId, answers);
 
     const where = { AssignmentID_StudentID: { AssignmentID: assignmentId, StudentID: userId } };
-    const existing = await prisma.submission.findUnique({ where, include: { grade: true } });
+    const existing = await prisma.submission.findUnique({
+      where,
+      include: { grade: true, attachments: { select: { AttachmentID: true } } },
+    });
     if (existing?.grade?.Status === "COMPLETE") {
       throw new ApiError("This submission has already been graded.", 409);
     }
 
-    // TODO: handle file uploads (formData.getAll("files")) — wire to your storage
-    // provider and create Attachment rows with the resulting URLs.
+    // ── Validate uploaded files before touching the database ──
+    const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+    const keptCount = (existing?.attachments ?? []).filter((a) => !removeIds.includes(a.AttachmentID)).length;
+    if (keptCount + files.length > MAX_FILES) {
+      throw new ApiError(`You can attach at most ${MAX_FILES} files.`, 400);
+    }
+    if (files.reduce((sum, f) => sum + f.size, 0) > MAX_TOTAL_BYTES) {
+      throw new ApiError(`Files are too large — keep new uploads under ${formatSize(MAX_TOTAL_BYTES)} in total.`, 400);
+    }
+    const prepared: { name: string; ext: string; bytes: Uint8Array<ArrayBuffer> }[] = [];
+    for (const f of files) {
+      const problem = checkFile(f.name, f.size);
+      if (problem) throw new ApiError(problem, 400);
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const ext = extOf(f.name);
+      if (!matchesSignature(ext, bytes.subarray(0, 8))) {
+        throw new ApiError(`"${f.name}" doesn't look like a real .${ext} file.`, 400);
+      }
+      prepared.push({ name: cleanFileName(f.name), ext, bytes });
+    }
 
     const answerRows = answers.map((a) => ({ QuestionID: a.questionId, AnswerText: a.answerText }));
-    const submission = await prisma.submission.upsert({
-      where,
-      create: {
-        AssignmentID: assignmentId,
-        StudentID: userId,
-        SubmittedAt: new Date(),
-        Status: "SUBMITTED",
-        ReceiptCode: newReceiptCode(),
-        answers: { create: answerRows },
-      },
-      update: {
-        SubmittedAt: new Date(),
-        Status: "SUBMITTED",
-        // A draft has no receipt yet; a resubmission keeps its original one.
-        ReceiptCode: existing?.ReceiptCode ?? newReceiptCode(),
-        answers: { deleteMany: {}, create: answerRows },
-      },
+    const status = pastDeadline ? ("LATE" as const) : ("SUBMITTED" as const);
+
+    const submission = await prisma.$transaction(async (tx) => {
+      const saved = await tx.submission.upsert({
+        where,
+        create: {
+          AssignmentID: assignmentId,
+          StudentID: userId,
+          SubmittedAt: new Date(),
+          Status: status,
+          ReceiptCode: newReceiptCode(),
+          answers: { create: answerRows },
+        },
+        update: {
+          SubmittedAt: new Date(),
+          Status: status,
+          // A draft has no receipt yet; a resubmission keeps its original one.
+          ReceiptCode: existing?.ReceiptCode ?? newReceiptCode(),
+          answers: { deleteMany: {}, create: answerRows },
+        },
+      });
+
+      if (removeIds.length) {
+        // Scoped to this submission, so a student can't delete someone else's file by ID.
+        await tx.attachment.deleteMany({ where: { SubmissionID: saved.SubmissionID, AttachmentID: { in: removeIds } } });
+      }
+      for (const f of prepared) {
+        const id = randomUUID();
+        await tx.attachment.create({
+          data: {
+            AttachmentID: id,
+            SubmissionID: saved.SubmissionID,
+            FileName: f.name,
+            FileLink: `/api/attachments/${id}`,
+            FileSizeKB: Math.max(1, Math.round(f.bytes.length / 1024)),
+            ContentType: ALLOWED_TYPES[f.ext],
+            file: { create: { Data: f.bytes } },
+          },
+        });
+      }
+      return saved;
+    });
+
+    const attachments = await prisma.attachment.findMany({
+      where: { SubmissionID: submission.SubmissionID },
+      orderBy: { DateUploaded: "asc" },
+      select: { AttachmentID: true, FileName: true, FileSizeKB: true, ContentType: true },
     });
 
     return NextResponse.json({
       ReceiptCode: submission.ReceiptCode,
       SubmittedAt: submission.SubmittedAt?.toISOString() ?? null,
+      Status: submission.Status,
+      attachments,
     });
   } catch (err) {
     return fail(err, "Submission error:");

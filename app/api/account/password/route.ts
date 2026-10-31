@@ -38,8 +38,12 @@ export async function POST(req: Request) {
       }
     }
 
-    await prisma.user.update({ where: { UserID: userId }, data: { Password: await bcrypt.hash(newPassword, 12) } });
-    return NextResponse.json({ message: "Password updated." });
+    // Bumping TokenVersion signs out every session, including this one; the client
+    // signs back in right away to get a fresh token (see AccountSettings).
+    await prisma.user.update({
+      where: { UserID: userId }, data: { Password: await bcrypt.hash(newPassword, 12), TokenVersion: { increment: 1 } },
+    });
+    return NextResponse.json({ message: "Password updated. Other devices have been signed out." });
   } catch (err) {
     console.error("Change-password error:", err);
     return NextResponse.json({ message: "Something went wrong. Please try again." }, { status: 500 });

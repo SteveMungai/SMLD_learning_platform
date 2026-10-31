@@ -39,6 +39,7 @@ export async function PUT(req: NextRequest) {
     title?: string;
     description?: string;
     deadlineDate?: string | null;
+    acceptLate?: boolean;
     questions?: IncomingQuestion[];
     publish?: boolean;
   };
@@ -111,6 +112,7 @@ export async function PUT(req: NextRequest) {
         Title: title,
         Description: description,
         DeadlineDate: deadline,
+        AcceptLate: body.acceptLate === true,
         Status: publish ? ("PUBLISHED" as const) : ("DRAFT" as const),
         MaxScore: maxScore,
       };

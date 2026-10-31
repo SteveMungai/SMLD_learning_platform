@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AccountSettings from "@/components/AccountSettings";
+import { isValidFullName } from "@/lib/names";
 
 export default async function AccountPage() {
   const session = await getServerSession(authOptions);
@@ -24,6 +25,7 @@ export default async function AccountPage() {
         <p className="text-sm mb-10" style={{ color: "#6b7280" }}>Manage your profile and password.</p>
         <AccountSettings
           name={user.FullName}
+          nameIsValid={isValidFullName(user.FullName)}
           email={user.Email}
           role={user.Role}
           memberSince={user.DateCreated.toISOString()}

@@ -78,6 +78,7 @@ export const authOptions: NextAuthOptions = {
           name: user.FullName,
           image: user.image,
           role: user.Role,
+          tokenVersion: user.TokenVersion,
         };
       },
     }),
@@ -90,11 +91,41 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.tokenVersion = user.tokenVersion;
+        token.invalid = false;
+      } else if (token.id && !token.invalid) {
+        // JWTs can't be revoked, so on every use compare the token's version with the
+        // account's current one. Changing/resetting a password bumps it, which makes
+        // every token issued before that moment stop working on all devices.
+        // Tokens minted before this check existed have no version and count as 0.
+        //
+        // If the database can't be reached this one time, keep the token as it is. Throwing
+        // from this callback makes NextAuth treat the session as broken and clear the cookie,
+        // which logs the user out on a hiccup that has nothing to do with their account.
+        try {
+          const current = await prisma.user.findUnique({
+            where: { UserID: token.id },
+            select: { TokenVersion: true, FullName: true },
+          });
+          if (!current || current.TokenVersion !== (token.tokenVersion ?? 0)) {
+            token.invalid = true;
+          } else {
+            // Keep the displayed name current (users can correct it in Account settings).
+            token.name = current.FullName;
+          }
+        } catch (err) {
+          console.error("Session check failed (keeping the existing token):", err);
+        }
       }
       return token;
     },
 
     async session({ session, token }) {
+      if (token?.invalid) {
+        // Hand back a session with no user: every page and API route already treats
+        // that as "not logged in". `invalid` lets the navbar clear the stale cookie.
+        return { expires: session.expires, invalid: true } as unknown as typeof session;
+      }
       if (token && session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

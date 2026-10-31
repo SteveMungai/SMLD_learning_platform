@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; 
 import { prisma } from "@/lib/prisma";
 import GradingView from "@/components/GradingView";
+import { isValidFullName } from "@/lib/names";
 import type { GradingAssignmentData } from "@/components/types";
 
 type PageProps = {
@@ -22,6 +23,7 @@ export default async function GradePage({ params }: PageProps) {
   const assignment = await prisma.assignment.findFirst({
     where: { LessonID: lessonId, Status: "PUBLISHED" },
     include: {
+      lesson: { select: { Title: true, SequenceOrder: true, course: { select: { Title: true } } } },
       questions: { orderBy: { SequenceOrder: "asc" } },
       submissions: {
         where: { Status: { in: ["SUBMITTED", "LATE"] } },
@@ -29,6 +31,10 @@ export default async function GradePage({ params }: PageProps) {
           student: true,
           answers: true,
           grade: true,
+          attachments: {
+            select: { AttachmentID: true, FileName: true, FileSizeKB: true, ContentType: true },
+            orderBy: { DateUploaded: "asc" },
+          },
         },
         orderBy: { SubmittedAt: "asc" },
       },
@@ -43,6 +49,23 @@ export default async function GradePage({ params }: PageProps) {
     );
   }
 
+  // Cohort students who haven't handed in (submissions above only holds SUBMITTED / LATE ones).
+  const roster = await prisma.cohortMembership.findMany({
+    where: { CohortID: assignment.CohortID, Status: "ACTIVE", user: { Role: "STUDENT" } },
+    select: { user: { select: { UserID: true, FullName: true, Email: true } } },
+  });
+  const submittedIds = new Set(assignment.submissions.map((s) => s.StudentID));
+  const missing = roster
+    .map((m) => m.user)
+    .filter((u) => !submittedIds.has(u.UserID))
+    .map((u) => ({
+      StudentID: u.UserID,
+      StudentName: u.FullName ?? u.Email,
+      StudentEmail: u.Email,
+      NameValid: isValidFullName(u.FullName),
+    }))
+    .sort((a, b) => a.StudentName.localeCompare(b.StudentName));
+
   // Published assignments always have a deadline; the fallback only satisfies the type.
   const deadline = assignment.DeadlineDate ?? new Date(0);
 
@@ -54,12 +77,23 @@ export default async function GradePage({ params }: PageProps) {
     Description: assignment.Description,
     DeadlineDate: deadline.toISOString(),
     Status: assignment.Status,
+    AcceptLate: assignment.AcceptLate,
+    lesson: {
+      LessonID: assignment.LessonID,
+      Title: assignment.lesson.Title,
+      SequenceOrder: assignment.lesson.SequenceOrder,
+      CourseTitle: assignment.lesson.course.Title,
+    },
+    missing,
     MaxScore: assignment.MaxScore,
     questions: assignment.questions,
     submissions: assignment.submissions.map((s) => ({
       SubmissionID: s.SubmissionID,
       StudentID: s.StudentID,
       StudentName: s.student.FullName ?? s.student.Email,
+      StudentEmail: s.student.Email,
+      NameValid: isValidFullName(s.student.FullName),
+      attachments: s.attachments,
       SubmittedAt: s.SubmittedAt ? s.SubmittedAt.toISOString() : null,
       Status: s.Status,
       IsLate: s.SubmittedAt ? s.SubmittedAt > deadline : false,

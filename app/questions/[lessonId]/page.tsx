@@ -55,7 +55,14 @@ export default async function QuestionsPage({ params }: PageProps) {
     assignment && role === "STUDENT" && userId
       ? await prisma.submission.findUnique({
           where: { AssignmentID_StudentID: { AssignmentID: assignment.AssignmentID, StudentID: userId } },
-          include: { answers: true, grade: true },
+          include: {
+            answers: true,
+            grade: true,
+            attachments: {
+              select: { AttachmentID: true, FileName: true, FileSizeKB: true, ContentType: true },
+              orderBy: { DateUploaded: "asc" },
+            },
+          },
         })
       : null;
 
@@ -86,6 +93,7 @@ export default async function QuestionsPage({ params }: PageProps) {
               Status: existingSubmission.Status,
               ReceiptCode: existingSubmission.ReceiptCode,
               SubmittedAt: existingSubmission.SubmittedAt?.toISOString() ?? null,
+              attachments: existingSubmission.attachments,
               answers: existingSubmission.answers.map((a) => ({
                 ...a,
                 GradedAt: a.GradedAt ? a.GradedAt.toISOString() : null,

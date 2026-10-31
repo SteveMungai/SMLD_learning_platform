@@ -7,15 +7,22 @@ import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
 import { LogOut, Settings } from "lucide-react";
 
+// `match` lists every path prefix that belongs to a nav item. Questions and notes are part
+// of a lesson, so they keep "Lessons" highlighted.
 const NAV_LINKS: { label: string; href: string; match?: string[] }[] = [
   { label: "Home", href: "/" },
-  { label: "Lessons", href: "/lessons", match: ["/lessons", "/questions", "/notes", "/instructor/notes"] },
-  { label: "Grades", href: "/Grades" },
+  { label: "Lessons", href: "/lessons", match: ["/lessons", "/questions"] },
+  { label: "Grades", href: "/grades" },
   { label: "About", href: "/about" },
 ];
 
+// /questions/<lessonId>/grade is the marking screen, which belongs to Grades, not Lessons.
+const isGradingPath = (pathname: string | null) => /^\/questions\/[^/]+\/grade(\/|$)/.test(pathname ?? "");
+
 function isLinkActive(link: (typeof NAV_LINKS)[number], pathname: string | null) {
   if (link.href === "/") return pathname === "/";
+  if (link.href === "/grades") return isGradingPath(pathname) || pathname === "/grades" || !!pathname?.startsWith("/grades/");
+  if (link.href === "/lessons" && isGradingPath(pathname)) return false;
   return (link.match ?? [link.href]).some((prefix) => pathname === prefix || pathname?.startsWith(prefix + "/"));
 }
 
@@ -31,6 +38,12 @@ function ProfileMenu() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // This device's session was invalidated (password changed elsewhere): clear the cookie and go to login.
+  const sessionInvalid = !!session?.invalid;
+  useEffect(() => {
+    if (sessionInvalid) signOut({ callbackUrl: "/login?expired=1" });
+  }, [sessionInvalid]);
 
   useEffect(() => {
     if (!open) return;

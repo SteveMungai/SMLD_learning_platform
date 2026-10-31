@@ -12,16 +12,16 @@
 // unconfigured mailer throws.
 import nodemailer from "nodemailer";
 
-type Mail = { to: string; subject: string; text: string; html: string };
+type Mail = { to: string; subject: string; text: string; html: string; replyTo?: string };
 
-export async function sendMail({ to, subject, text, html }: Mail) {
+export async function sendMail({ to, subject, text, html, replyTo }: Mail) {
   const host = process.env.SMTP_HOST;
 
   if (!host) {
     if (process.env.NODE_ENV === "production") {
       throw new Error("SMTP_HOST is not configured; cannot send email.");
     }
-    console.log(`\n[mailer:dev] To: ${to}\n[mailer:dev] Subject: ${subject}\n${text}\n`);
+    console.log(`\n[mailer:dev] To: ${to}${replyTo ? `  (reply-to ${replyTo})` : ""}\n[mailer:dev] Subject: ${subject}\n${text}\n`);
     return;
   }
 
@@ -36,6 +36,7 @@ export async function sendMail({ to, subject, text, html }: Mail) {
   await transport.sendMail({
     from: process.env.EMAIL_FROM ?? process.env.SMTP_USER,
     to,
+    replyTo,
     subject,
     text,
     html,

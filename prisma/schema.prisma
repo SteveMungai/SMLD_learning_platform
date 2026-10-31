@@ -16,6 +16,7 @@ model User {
   emailVerified     DateTime?
   image             String?
   updatedAt         DateTime           @updatedAt
+  TokenVersion      Int                @default(0)
   accounts          Account[]
   adminLogs         AdminLog[]
   attendanceMarked  Attendance[]       @relation("InstructorMarksAttendance")
@@ -145,15 +146,17 @@ model Note {
 }
 
 model Assignment {
-  AssignmentID String       @id @default(cuid())
+  AssignmentID String           @id @default(cuid())
   LessonID     String
   CohortID     String
   Title        String
   Description  String?
-  DeadlineDate DateTime
+  DeadlineDate DateTime?
+  AcceptLate   Boolean          @default(true)
+  Status       AssignmentStatus @default(DRAFT)
   MaxScore     Float?
-  cohort       Cohort       @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
-  lesson       Lesson       @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+  cohort       Cohort           @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
+  lesson       Lesson           @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
   questions    Question[]
   submissions  Submission[]
 }
@@ -202,13 +205,22 @@ model SubmissionAnswer {
 }
 
 model Attachment {
-  AttachmentID String     @id @default(cuid())
+  AttachmentID String          @id @default(cuid())
   SubmissionID String
   FileName     String
   FileLink     String
   FileSizeKB   Int?
-  DateUploaded DateTime   @default(now())
-  submission   Submission @relation(fields: [SubmissionID], references: [SubmissionID], onDelete: Cascade)
+  DateUploaded DateTime        @default(now())
+  ContentType  String?
+  file         AttachmentData?
+  submission   Submission      @relation(fields: [SubmissionID], references: [SubmissionID], onDelete: Cascade)
+}
+
+// The file bytes live in their own table so listing attachments never loads the files.
+model AttachmentData {
+  AttachmentID String     @id
+  Data         Bytes
+  attachment   Attachment @relation(fields: [AttachmentID], references: [AttachmentID], onDelete: Cascade)
 }
 
 model Grade {
@@ -257,6 +269,11 @@ enum Role {
 enum MembershipStatus {
   ACTIVE
   INACTIVE
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
 }
 
 enum QuestionType {

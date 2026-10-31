@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { NAME_NOTICE } from "@/lib/names";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +19,9 @@ export default function LoginPage() {
 
 function LoginForm() {
   const router = useRouter();
-  const resetSuccess = useSearchParams().get("reset") === "success";
+  const params = useSearchParams();
+  const resetSuccess = params.get("reset") === "success";
+  const expired = params.get("expired") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -165,6 +168,20 @@ function LoginForm() {
               <p className="text-sm text-green-800">Your password was updated. Please sign in with the new one.</p>
             </div>
           )}
+
+          {expired && !error && !resetSuccess && (
+            <div className="mb-4 rounded-md bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-sm text-amber-800">You were signed out because your password was changed. Please sign in again.</p>
+            </div>
+          )}
+
+          {/* Real-name notice (shown to everyone signing in) */}
+          <div className="mb-4 rounded-md bg-blue-50 border border-blue-200 px-4 py-3" role="note">
+            <p className="text-sm text-blue-900">
+              <span className="font-semibold">Use your real name.</span> {NAME_NOTICE}{" "}
+              <span className="text-blue-800">You can check or correct yours in Account settings after signing in.</span>
+            </p>
+          </div>
 
           {/* Error message */}
           {error && (
