@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, ShieldCheck } from "lucide-react";
 
 // `match` lists every path prefix that belongs to a nav item. Questions and notes are part
 // of a lesson, so they keep "Lessons" highlighted.
@@ -131,6 +131,9 @@ function ProfileMenu() {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+  const onAdmin = !!pathname?.startsWith("/admin");
 
   return (
     <>
@@ -179,6 +182,16 @@ export default function Navbar() {
 
         {/* Right side — account icon + mobile burger */}
         <div className="flex items-center gap-3">
+          {/* Admins only: sits between the page links and the account icon. */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide no-underline"
+              style={{ background: onAdmin ? "#E02020" : "rgba(224,32,32,0.1)", color: onAdmin ? "#fff" : "#E02020" }}
+            >
+              <ShieldCheck size={13} aria-hidden="true" /> Admin
+            </Link>
+          )}
           <ProfileMenu />
 
           {/* Mobile burger */}
@@ -222,6 +235,16 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMenuOpen(false)}
+              className="px-6 py-3 text-sm font-semibold no-underline border-b"
+              style={{ color: onAdmin ? "#E02020" : "#374151", borderColor: "#f3f4f6" }}
+            >
+              Admin
+            </Link>
+          )}
         </div>
       )}
     </>

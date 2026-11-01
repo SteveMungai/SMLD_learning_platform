@@ -45,7 +45,7 @@ const MOCK_CONTRIBUTORS: ContributorProfile[] = [
   {
     id: "contributor-1",
     name: "Calisto Odede",
-    title: "Presdiding Bishop",
+    title: "Presiding Bishop",
     bio: "Principal for the School of Ministry and Leadership Development.",
     avatarUrl: null,
   },
