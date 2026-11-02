@@ -84,7 +84,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
 
   if (!activeAssignment) {
     return (
-      <div style={cardStyle} className="rounded-xl p-10 text-center">
+      <div style={cardStyle} className="rounded-xl p-6 sm:p-10 text-center">
         <p className="text-sm font-semibold text-gray-900 mb-1">No questions yet</p>
         <p className="text-sm" style={{ color: "#6b7280" }}>
           Your lecturer hasn&apos;t published questions for this lesson. Check back soon.
@@ -166,7 +166,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
   }
 
   const header = (
-    <section style={cardStyle} className="p-6 rounded-xl">
+    <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{activeAssignment.Title}</h1>
       {activeAssignment.Description && (
         <p className="text-sm mb-4" style={{ color: "#6b7280" }}>{activeAssignment.Description}</p>
@@ -209,7 +209,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
       <div className="space-y-8">
         {header}
 
-        <section style={cardStyle} className="p-6 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <section style={cardStyle} className="p-4 sm:p-6 rounded-xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <CheckCircle2 size={28} style={{ color: "#E02020" }} />
             <div>
@@ -249,7 +249,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
         )}
 
         {(submission?.attachments.length ?? 0) > 0 && (
-          <section style={cardStyle} className="p-6 rounded-xl">
+          <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Attached files</h3>
             {fileList(submission!.attachments)}
           </section>
@@ -259,7 +259,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
           {activeAssignment.questions.map((q) => {
             const a = answerFor(q.QuestionID);
             return (
-              <div key={q.QuestionID} style={cardStyle} className="p-6 rounded-xl">
+              <div key={q.QuestionID} style={cardStyle} className="p-4 sm:p-6 rounded-xl">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3">
                     <span className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mt-0.5" style={{ background: "rgba(224,32,32,0.1)", color: "#E02020" }}>
@@ -332,7 +332,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
 
       <div className="space-y-5">
         {activeAssignment.questions.map((q) => (
-          <div key={q.QuestionID} style={cardStyle} className="p-6 rounded-xl">
+          <div key={q.QuestionID} style={cardStyle} className="p-4 sm:p-6 rounded-xl">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mt-0.5" style={{ background: "rgba(224,32,32,0.1)", color: "#E02020" }}>
@@ -356,7 +356,7 @@ export default function StudentQuestionsView({ assignment, existingSubmission, i
       </div>
 
       {!locked && (
-        <section style={cardStyle} className="p-6 rounded-xl">
+        <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
           <h3 className="text-sm font-bold text-gray-900 mb-1">Attach files (optional)</h3>
           <p className="text-xs mb-3" style={{ color: "#9ca3af" }}>
             Up to {MAX_FILES} files, {formatSize(MAX_TOTAL_BYTES)} in total (PDF, Word, PowerPoint, Excel, text or images). Files are uploaded when you submit — they aren&apos;t part of draft autosave.

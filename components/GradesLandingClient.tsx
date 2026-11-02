@@ -101,8 +101,8 @@ export default function GradesLandingClient({ cohorts }: { cohorts: GradesCohort
     return (
       <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
         <Navbar />
-        <main className="flex-1 px-6 py-16 max-w-3xl mx-auto w-full">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Grades</h1>
+        <main className="flex-1 px-4 sm:px-6 py-16 max-w-3xl mx-auto w-full">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-4">Grades</h1>
           <p className="text-sm" style={{ color: "#6b7280" }}>No cohorts or lessons have been created yet.</p>
         </main>
         <Footer />
@@ -123,9 +123,9 @@ export default function GradesLandingClient({ cohorts }: { cohorts: GradesCohort
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
       <Navbar />
 
-      <main className="flex-1 px-6 py-16 max-w-4xl mx-auto w-full">
+      <main className="flex-1 px-4 sm:px-6 py-16 max-w-4xl mx-auto w-full">
         <section className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-3">Grades</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-3">Grades</h1>
           <p className="text-[15px] leading-relaxed" style={{ color: "#6b7280" }}>
             Pick a lesson to see who has submitted, grade their work and give feedback.
           </p>
@@ -223,7 +223,7 @@ export default function GradesLandingClient({ cohorts }: { cohorts: GradesCohort
 
         {/* Courses + lessons */}
         {filteredCourses.length === 0 ? (
-         
+          // When students matched the search, an empty lesson list is expected — don't call it out.
           matchedStudents.length === 0 && (
             <p className="text-sm" style={{ color: "#6b7280" }}>
               {q || filter !== "all" ? "No lessons or students match your search or filter." : "This cohort has no lessons yet."}
@@ -240,7 +240,7 @@ export default function GradesLandingClient({ cohorts }: { cohorts: GradesCohort
                       key={l.LessonID}
                       href={l.hasAssignment ? `/questions/${l.LessonID}/grade` : `/questions/${l.LessonID}`}
                       style={cardStyle}
-                      className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all duration-200 hover:shadow-sm"
+                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 p-4 sm:p-5 rounded-xl transition-all duration-200 hover:shadow-sm"
                     >
                       <div className="flex items-center min-w-0">
                         <span className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold mr-4" style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", color: "#6b7280" }}>
@@ -254,7 +254,7 @@ export default function GradesLandingClient({ cohorts }: { cohorts: GradesCohort
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-wrap items-center gap-2 pl-[52px] sm:pl-0 sm:flex-shrink-0">
                         {l.hasAssignment && (
                           <>
                             <Stat label={`${l.submitted}/${l.total} submitted`} tone="gray" />

@@ -94,10 +94,14 @@ export async function addLesson(input: { courseId: string; title: string }): Pro
   const course = await prisma.course.findUnique({ where: { CourseID: input.courseId } });
   if (!course) return { error: "Course not found." };
 
+  // Remember who added the lesson so their name can be shown on it.
+  const session = await getServerSession(authOptions);
+  const creatorId = session?.user?.id ?? null;
+
   // New lessons go to the end of the course.
   const last = await prisma.lesson.aggregate({ where: { CourseID: course.CourseID }, _max: { SequenceOrder: true } });
   await prisma.lesson.create({
-    data: { CourseID: course.CourseID, Title: title, SequenceOrder: (last._max.SequenceOrder ?? 0) + 1 },
+    data: { CourseID: course.CourseID, Title: title, SequenceOrder: (last._max.SequenceOrder ?? 0) + 1, CreatedByID: creatorId },
   });
 
   refresh();

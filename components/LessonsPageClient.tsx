@@ -15,6 +15,8 @@ export type LessonSummary = {
   hasAudio: boolean;
   hasNotes: boolean;
   hasZoom: boolean;
+  // Who added the lesson (null for lessons created before this was recorded).
+  lecturerName: string | null;
 };
 
 export type CourseWithLessons = {
@@ -60,8 +62,8 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
     return (
       <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
         <Navbar />
-        <main className="flex-1 px-6 py-16 max-w-3xl mx-auto w-full">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
+        <main className="flex-1 px-4 sm:px-6 py-16 max-w-3xl mx-auto w-full">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
           <p className="text-sm" style={{ color: "#6b7280" }}>No lessons are available yet.</p>
         </main>
         <Footer />
@@ -76,7 +78,7 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
         <main className="flex-1 px-6 py-16">
           <section className="max-w-3xl mb-10">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
             <p className="text-[15px] leading-relaxed" style={{ color: "#6b7280" }}>
               Browse lessons by cohort. Click a lesson to open its video, notes and questions.
             </p>
@@ -121,7 +123,7 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
                         key={lesson.LessonID}
                         href={`/lessons/${lesson.LessonID}/video`}
                         style={cardStyle}
-                        className="flex items-center justify-between p-5 rounded-xl transition-all duration-200 hover:shadow-sm cursor-pointer"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 rounded-xl transition-all duration-200 hover:shadow-sm cursor-pointer"
                       >
                         <div className="flex items-center min-w-0">
                           <span
@@ -130,10 +132,15 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
                           >
                             {lesson.SequenceOrder}
                           </span>
-                          <span className="text-[15px] font-semibold text-gray-900 truncate">{lesson.Title}</span>
+                          <div className="min-w-0">
+                            <p className="text-[15px] font-semibold text-gray-900 truncate">{lesson.Title}</p>
+                            {lesson.lecturerName && (
+                              <p className="text-xs truncate" style={{ color: "#9ca3af" }}>By {lesson.lecturerName}</p>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                        <div className="flex flex-wrap items-center gap-2 pl-[52px] sm:pl-0 sm:flex-shrink-0 sm:ml-4">
                           <ContentBadge active={lesson.hasVideo} icon={PlayCircle} label="Video" />
                           <ContentBadge active={lesson.hasAudio} icon={Headphones} label="Audio" />
                           <ContentBadge active={lesson.hasNotes} icon={FileText} label="Notes" />

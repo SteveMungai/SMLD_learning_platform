@@ -12,7 +12,7 @@ export default async function LessonVideoPage({ params }: { params: Promise<{ le
   const video = row ? { title: row.Title, link: row.YoutubeLink } : null;
 
   return (
-    <LessonShell lessonId={lessonId} role={role} topicNumber={lesson.SequenceOrder} title={lesson.Title} align="center">
+    <LessonShell lessonId={lessonId} role={role} topicNumber={lesson.SequenceOrder} title={lesson.Title} lecturerName={lesson.createdBy?.FullName} align="center">
       {isStaff ? <LecturerVideoView lessonId={lessonId} video={video} /> : <StudentVideoView lessonId={lessonId} video={video} />}
     </LessonShell>
   );

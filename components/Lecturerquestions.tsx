@@ -142,8 +142,8 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
         <div className="px-4 py-3 rounded-lg text-sm" style={{ background: "rgba(224,32,32,0.06)", color: "#991b1b" }}>{notice}</div>
       )}
 
-      <section style={cardStyle} className="p-6 rounded-xl">
-        <div className="flex items-center justify-between mb-5">
+      <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-gray-900">Assignment Details</h2>
             {!isPreview && (
@@ -214,7 +214,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
       </section>
 
       <section>
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <h2 className="text-lg font-bold text-gray-900">
             Questions{" "}
             <span className="text-sm font-normal" style={{ color: "#9ca3af" }}>
@@ -235,7 +235,7 @@ export default function LecturerQuestionsView({ lessonId, assignment, isPreview 
                   <GripVertical size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold" style={{ background: "rgba(224,32,32,0.1)", color: "#E02020" }}>
                       {index + 1}
                     </span>

@@ -42,7 +42,7 @@ export default function QuestionsPageClient({
 
         <main className="flex-1 px-6 py-16">
           {isAuthenticated && <LessonTabs lessonId={lessonId} />}
-          <div className="max-w-3xl flex items-center justify-between mb-10">
+          <div className="max-w-3xl flex flex-wrap items-center justify-between gap-3 mb-10">
             <div>
               {lesson && (
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#E02020" }}>
@@ -51,7 +51,7 @@ export default function QuestionsPageClient({
                   <span style={{ color: "#6b7280" }}>{lesson.CourseTitle}</span>
                 </p>
               )}
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-1">
                 {lesson ? `Lesson ${lesson.SequenceOrder}: ${lesson.Title}` : "Assignment"}
               </h1>
               <p className="text-sm" style={{ color: "#6b7280" }}>
@@ -91,7 +91,7 @@ export default function QuestionsPageClient({
 
           {!isAuthenticated && (
             <div
-              className="max-w-3xl mb-8 px-4 py-3 rounded-lg text-sm flex items-center justify-between"
+              className="max-w-3xl mb-8 px-4 py-3 rounded-lg text-sm flex flex-wrap items-center justify-between gap-2"
               style={{ background: "rgba(224,32,32,0.06)", color: "#991b1b" }}
             >
               <span>You&apos;re viewing a preview with sample data. Log in to see and submit real assignments.</span>

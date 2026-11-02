@@ -115,7 +115,7 @@ async function main() {
       VideoID: "test-video-1",
       LessonID: lesson1.LessonID,
       Title: "Week 1 lecture: Discipleship",
-      YoutubeLink: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      YoutubeLink: "https://youtu.be/pdVNzp2S5a4?si=Ikszt8ukmpd8w3qr",
     },
   });
 

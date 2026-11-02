@@ -8,11 +8,15 @@ type Props = {
   role: "STUDENT" | "INSTRUCTOR" | "ADMIN" | undefined;
   topicNumber: number;
   title: string;
+  // The lecturer who added the lesson, if known.
+  lecturerName?: string | null;
   align?: "left" | "center";
   children: ReactNode;
 };
 
-export default function LessonShell({ lessonId, role, topicNumber, title, align = "left", children }: Props) {
+// Page frame for the lesson sections (Video, Notes): navbar, the 1-2-3 sidebar, a
+// "Topic N" heading, and the footer — the layout from the design mockup.
+export default function LessonShell({ lessonId, role, topicNumber, title, lecturerName, align = "left", children }: Props) {
   return (
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
       <Navbar />
@@ -29,6 +33,11 @@ export default function LessonShell({ lessonId, role, topicNumber, title, align 
                 Topic {topicNumber}
               </span>
               <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+              {lecturerName && (
+                <p className="basis-full text-sm" style={{ color: "#6b7280" }}>
+                  Lecturer: <span className="font-semibold text-gray-900">{lecturerName}</span>
+                </p>
+              )}
             </div>
             {children}
           </div>

@@ -5,7 +5,6 @@ import { ChevronRight } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 
 const cardStyle = { background: "#ffffff", border: "0.5px solid #e5e7eb" };
@@ -71,10 +70,9 @@ export default async function QuestionsIndexPage() {
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
       <Navbar />
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
-        <Sidebar role={role} />
         <main className="flex-1 px-6 py-16">
           <section className="max-w-3xl mb-10">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Questions</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">Questions</h1>
             <p className="text-sm" style={{ color: "#6b7280" }}>
               {isStaff
                 ? "Choose a lesson to set its questions, deadline and scoring."

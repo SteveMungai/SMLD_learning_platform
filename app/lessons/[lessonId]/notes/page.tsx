@@ -40,7 +40,7 @@ export default async function LessonNotesPage({ params }: { params: Promise<{ le
   }
 
   return (
-    <LessonShell lessonId={lessonId} role={role} topicNumber={lesson.SequenceOrder} title={lesson.Title}>
+    <LessonShell lessonId={lessonId} role={role} topicNumber={lesson.SequenceOrder} title={lesson.Title} lecturerName={lesson.createdBy?.FullName}>
       {isStaff ? <LecturerNotesView lessonId={lessonId} notes={notes} /> : <StudentNotesView lessonId={lessonId} notes={notes} assignment={assignment} />}
     </LessonShell>
   );

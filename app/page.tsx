@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
+import HomeUpdates from "@/components/updates/HomeUpdates";
+import Footer from "@/components/Footer";
 
 const PILLARS = [
   {
@@ -25,19 +27,7 @@ const PILLARS = [
   },
 ];
 
-const SOCIALS = [
-  { label: "Facebook", href: "#", icon: "M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" },
-  {
-    label: "X",
-    href: "#",
-    icon: "M4 4l16 16M20 4 4 20",
-  },
-  {
-    label: "Instagram",
-    href: "#",
-    icon: "M 7.5 2 C 4.46 2 2 4.46 2 7.5 L 2 16.5 C 2 19.54 4.46 22 7.5 22 L 16.5 22 C 19.54 22 22 19.54 22 16.5 L 22 7.5 C 22 4.46 19.54 2 16.5 2 Z M 12 7 C 14.76 7 17 9.24 17 12 C 17 14.76 14.76 17 12 17 C 9.24 17 7 14.76 7 12 C 7 9.24 9.24 7 12 7 Z M 12 9 A 3 3 0 1 0 12 15 A 3 3 0 0 0 12 9 Z M 17.5 5.5 A 1 1 0 1 1 17.5 7.5 A 1 1 0 0 1 17.5 5.5 Z",
-  },
-];
+
 
 export default function HomePage() {
   return (
@@ -103,6 +93,8 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      <HomeUpdates />
 
       {/* ── Pillars section ── */}
       <section className="px-6 py-16 bg-white">
@@ -194,85 +186,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "#111111" }} className="px-6 pt-10 pb-6">
-        {/* Logo + name */}
-        <div className="flex flex-col items-center gap-2 mb-6">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
-              style={{ background: "#E02020" }}
-            >
-              CITAM
-            </div>
-            <span className="text-sm font-semibold text-white">
-              School of Ministry and Leadership Development
-            </span>
-          </div>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Equipping transformational leaders for kingdom work
-          </p>
-        </div>
-
-        {/* Connect */}
-        <p
-          className="text-center text-xs tracking-widest uppercase mb-3"
-          style={{ color: "rgba(255,255,255,0.35)" }}
-        >
-          Connect
-        </p>
-        <div className="flex justify-center gap-3 mb-8">
-          {SOCIALS.map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              aria-label={s.label}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{
-                border: "0.5px solid rgba(255,255,255,0.15)",
-                color: "rgba(255,255,255,0.5)",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "#E02020";
-                (e.currentTarget as HTMLAnchorElement).style.color = "#E02020";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor =
-                  "rgba(255,255,255,0.15)";
-                (e.currentTarget as HTMLAnchorElement).style.color =
-                  "rgba(255,255,255,0.5)";
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d={s.icon} />
-              </svg>
-            </a>
-          ))}
-        </div>
-
-        {/* Bottom line */}
-        <div
-          className="pt-4 text-center"
-          style={{ borderTop: "0.5px solid rgba(255,255,255,0.08)" }}
-        >
-          <p
-            className="text-xs leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
-            CITAM School of Ministry and Leadership Development (SMLD) 2026
-            <br />
-            All Rights Reserved. SMLD | Christ Is The Answer
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

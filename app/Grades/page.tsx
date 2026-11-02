@@ -130,8 +130,8 @@ export default async function GradesPage() {
   return (
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
       <Navbar />
-      <main className="flex-1 px-6 py-16 max-w-3xl mx-auto w-full">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">My grades</h1>
+      <main className="flex-1 px-4 sm:px-6 py-16 max-w-3xl mx-auto w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">My grades</h1>
         <p className="text-sm mb-10" style={{ color: "#6b7280" }}>Your results and your lecturer&apos;s comments for each lesson.</p>
 
         {courses.length === 0 ? (

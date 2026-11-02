@@ -102,7 +102,7 @@ export default function AccountSettings({ name, email, role, memberSince, hasPas
 
   return (
     <div className="space-y-8">
-      <section style={cardStyle} className="p-6 rounded-xl">
+      <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Profile</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
           {rows.map(([label, value]) => (
@@ -114,7 +114,7 @@ export default function AccountSettings({ name, email, role, memberSince, hasPas
         </dl>
       </section>
 
-      <section style={cardStyle} className="p-6 rounded-xl">
+      <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
         <h2 className="text-lg font-bold text-gray-900 mb-1">Your name</h2>
         <p className="text-sm mb-4" style={{ color: "#6b7280" }}>{NAME_NOTICE}</p>
 
@@ -147,7 +147,7 @@ export default function AccountSettings({ name, email, role, memberSince, hasPas
         </form>
       </section>
 
-      <section style={cardStyle} className="p-6 rounded-xl">
+      <section style={cardStyle} className="p-4 sm:p-6 rounded-xl">
         <h2 className="text-lg font-bold text-gray-900 mb-1">{hasPassword ? "Change password" : "Set a password"}</h2>
         <p className="text-sm mb-6" style={{ color: "#6b7280" }}>Use at least 8 characters.</p>
 

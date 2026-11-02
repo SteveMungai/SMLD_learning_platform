@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
-import { LogOut, Settings, ShieldCheck } from "lucide-react";
+import { Bell, LogOut, Settings, ShieldCheck } from "lucide-react";
 
 // `match` lists every path prefix that belongs to a nav item. Questions and notes are part
 // of a lesson, so they keep "Lessons" highlighted.
@@ -13,6 +13,7 @@ const NAV_LINKS: { label: string; href: string; match?: string[] }[] = [
   { label: "Home", href: "/" },
   { label: "Lessons", href: "/lessons", match: ["/lessons", "/questions"] },
   { label: "Grades", href: "/grades" },
+  { label: "Updates", href: "/updates" },
   { label: "About", href: "/about" },
 ];
 
@@ -128,6 +129,44 @@ function ProfileMenu() {
   );
 }
 
+/** Bell with the unread count. A shortcut to Updates, shown only when signed in. */
+function UpdatesBell() {
+  const { status } = useSession();
+  const pathname = usePathname();
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let alive = true;
+    const load = () =>
+      fetch("/api/updates/unread")
+        .then((r) => (r.ok ? r.json() : { count: 0 }))
+        .then((d: { count: number }) => alive && setCount(d.count))
+        .catch(() => {});
+    load();
+    window.addEventListener("updates:read", load);
+    const timer = setInterval(load, 5 * 60_000);
+    return () => { alive = false; window.removeEventListener("updates:read", load); clearInterval(timer); };
+  }, [status, pathname]);
+
+  if (status !== "authenticated") return null;
+  return (
+    <Link
+      href="/updates"
+      aria-label={count > 0 ? `Updates, ${count} unread` : "Updates"}
+      className="relative inline-flex items-center justify-center w-10 h-10 rounded-full no-underline"
+      style={{ border: "0.5px solid #e5e7eb", color: "#374151" }}
+    >
+      <Bell size={17} aria-hidden="true" />
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ background: "#C81E1E" }}>
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -139,7 +178,7 @@ export default function Navbar() {
     <>
       {/* ── Nav ── */}
       <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-6 h-14"
+        className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6 h-14"
         style={{
           background: "white",
           borderBottom: "0.5px solid #e5e7eb",
@@ -162,7 +201,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden md:flex items-center gap-8 list-none m-0 p-0">
+        <ul className="hidden md:flex items-center gap-5 lg:gap-8 list-none m-0 p-0">
           {NAV_LINKS.map((link) => {
             const isActive = isLinkActive(link, pathname);
 
@@ -182,6 +221,7 @@ export default function Navbar() {
 
         {/* Right side — account icon + mobile burger */}
         <div className="flex items-center gap-3">
+          <UpdatesBell />
           {/* Admins only: sits between the page links and the account icon. */}
           {isAdmin && (
             <Link
@@ -196,7 +236,7 @@ export default function Navbar() {
 
           {/* Mobile burger */}
           <button
-            className="md:hidden w-8 h-8 flex items-center justify-center"
+            className="md:hidden w-10 h-10 flex items-center justify-center"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
@@ -225,7 +265,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="px-6 py-3 text-sm font-medium no-underline border-b"
+                className="px-6 py-3.5 text-sm font-medium no-underline border-b"
                 style={{
                   color: isActive ? "#E02020" : "#374151",
                   borderColor: "#f3f4f6",

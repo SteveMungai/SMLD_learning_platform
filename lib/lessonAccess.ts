@@ -13,7 +13,10 @@ export async function requireLessonAccess(lessonId: string) {
 
   const lesson = await prisma.lesson.findUnique({
     where: { LessonID: lessonId },
-    include: { course: { select: { Title: true, CohortID: true } } },
+    include: {
+      course: { select: { Title: true, CohortID: true } },
+      createdBy: { select: { FullName: true } },
+    },
   });
   if (!lesson) notFound();
 

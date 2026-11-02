@@ -8,8 +8,8 @@ const IconFacebook = () => (
 );
 
 const IconTwitter = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="stroke-none">
-    <path d="M4 4l16 16M20 4 4 20" />
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="stroke-none">
+    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
   </svg>
 );
 
@@ -32,7 +32,7 @@ const IconInstagram = () => (
 
 const SOCIALS = [
   { label: "Facebook", href: "https://www.facebook.com/CITAMCC/", Icon: IconFacebook },
-  { label: "X (Twitter)", href: "#", Icon: IconTwitter },
+  { label: "X (Twitter)", href: "https://x.com/citam_claycity", Icon: IconTwitter },
   { label: "Instagram", href: "https://www.instagram.com/citam.claycity/", Icon: IconInstagram },
 ];
 

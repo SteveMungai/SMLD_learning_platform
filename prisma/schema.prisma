@@ -17,6 +17,9 @@ model User {
   image             String?
   updatedAt         DateTime           @updatedAt
   TokenVersion      Int                @default(0)
+  lessonsCreated    Lesson[]           @relation("LessonCreatedBy")
+  announcements     Announcement[]     @relation("AnnouncementAuthor")
+  announcementReads AnnouncementRead[]
   accounts          Account[]
   adminLogs         AdminLog[]
   attendanceMarked  Attendance[]       @relation("InstructorMarksAttendance")
@@ -63,13 +66,14 @@ model VerificationToken {
 }
 
 model Cohort {
-  CohortID     String             @id @default(cuid())
-  CohortName   String
-  AcademicYear String
-  Description  String?
-  assignments  Assignment[]
-  memberships  CohortMembership[]
-  courses      Course[]
+  CohortID      String               @id @default(cuid())
+  CohortName    String
+  AcademicYear  String
+  Description   String?
+  assignments   Assignment[]
+  memberships   CohortMembership[]
+  courses       Course[]
+  announcements AnnouncementCohort[]
 }
 
 model CohortMembership {
@@ -94,18 +98,21 @@ model Course {
 }
 
 model Lesson {
-  LessonID      String        @id @default(cuid())
+  LessonID      String         @id @default(cuid())
   CourseID      String
   Title         String
   SequenceOrder Int
-  DateCreated   DateTime      @default(now())
+  DateCreated   DateTime       @default(now())
+  CreatedByID   String?
+  createdBy     User?          @relation("LessonCreatedBy", fields: [CreatedByID], references: [UserID], onDelete: SetNull)
   assignments   Assignment[]
   attendance    Attendance[]
   audio         Audio?
-  course        Course        @relation(fields: [CourseID], references: [CourseID], onDelete: Cascade)
+  course        Course         @relation(fields: [CourseID], references: [CourseID], onDelete: Cascade)
   notes         Note[]
   video         Video?
   zoomMeetings  ZoomMeeting[]
+  announcements Announcement[]
 }
 
 model Video {
@@ -296,4 +303,47 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   EXCUSED
+}
+
+// Announcements shown on the Updates page. Students see the ones aimed at their cohorts.
+// An announcement with an EventAt also appears on the calendar.
+model Announcement {
+  AnnouncementID String               @id @default(cuid())
+  Title          String
+  Body           String
+  Pinned         Boolean              @default(false)
+  AllCohorts     Boolean              @default(false)
+  Published      Boolean              @default(true)
+  PublishAt      DateTime             @default(now())
+  ExpiresAt      DateTime?
+  EventAt        DateTime?
+  LessonID       String?
+  AuthorID       String?
+  DateCreated    DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  author         User?                @relation("AnnouncementAuthor", fields: [AuthorID], references: [UserID], onDelete: SetNull)
+  lesson         Lesson?              @relation(fields: [LessonID], references: [LessonID], onDelete: SetNull)
+  cohorts        AnnouncementCohort[]
+  reads          AnnouncementRead[]
+
+  @@index([Published, PublishAt])
+}
+
+model AnnouncementCohort {
+  AnnouncementID String
+  CohortID       String
+  announcement   Announcement @relation(fields: [AnnouncementID], references: [AnnouncementID], onDelete: Cascade)
+  cohort         Cohort       @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
+
+  @@id([AnnouncementID, CohortID])
+}
+
+model AnnouncementRead {
+  AnnouncementID String
+  UserID         String
+  ReadAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [AnnouncementID], references: [AnnouncementID], onDelete: Cascade)
+  user           User         @relation(fields: [UserID], references: [UserID], onDelete: Cascade)
+
+  @@id([AnnouncementID, UserID])
 }

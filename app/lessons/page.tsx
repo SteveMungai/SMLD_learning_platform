@@ -24,7 +24,13 @@ export default async function LessonsPage() {
         include: {
           lessons: {
             orderBy: { SequenceOrder: "asc" },
-            include: { video: true, audio: true, notes: { select: { NoteID: true } }, zoomMeetings: { select: { MeetingID: true } } },
+            include: {
+              video: true,
+              audio: true,
+              notes: { select: { NoteID: true } },
+              zoomMeetings: { select: { MeetingID: true } },
+              createdBy: { select: { FullName: true } },
+            },
           },
         },
       },
@@ -46,6 +52,7 @@ export default async function LessonsPage() {
         hasAudio: !!l.audio,
         hasNotes: l.notes.length > 0,
         hasZoom: l.zoomMeetings.length > 0,
+        lecturerName: l.createdBy?.FullName ?? null,
       })),
     })),
   }));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -54,7 +54,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
 
   const isGraded = (s: GradableSubmission) => s.grade?.Status === "COMPLETE";
 
-  //counts, search and filter 
+  //counts, search and filter
   const counts = useMemo(
     () => ({
       all: submissions.length + missing.length,
@@ -94,7 +94,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
     { id: "missing", label: "Missing" },
   ];
 
-  // score / comment helpers 
+  // score / comment helpers
   const findAnswer = (s: GradableSubmission, qid: string) => s.answers.find((a) => a.QuestionID === qid);
 
   function getScoreDraft(sid: string, qid: string, fallback: number | null) {
@@ -191,6 +191,14 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
     }
   }
 
+  // On a phone the grading panel sits below the student list, so jump to it when a student is picked.
+  const mainRef = useRef<HTMLElement>(null);
+  const firstSelection = useRef(true);
+  useEffect(() => {
+    if (firstSelection.current) { firstSelection.current = false; return; }
+    if (window.matchMedia("(max-width: 1023px)").matches) mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedKey]);
+
   const lateList = submissions.filter((s) => s.IsLate);
   const deadlineText = formatSubmittedAt(assignment.DeadlineDate);
 
@@ -206,14 +214,14 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
       <Navbar />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto w-full px-6 pt-8">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-8">
         <Link href="/grades" className="inline-flex items-center gap-1 text-xs font-semibold mb-3" style={{ color: "#6b7280" }}>
           <ChevronLeft size={14} /> All lessons
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#E02020" }}>{assignment.lesson.CourseTitle}</p>
-            <h1 className="text-2xl font-bold text-gray-900">Lesson {assignment.lesson.SequenceOrder}: {assignment.lesson.Title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Lesson {assignment.lesson.SequenceOrder}: {assignment.lesson.Title}</h1>
             <p className="text-sm mt-1" style={{ color: "#6b7280" }}>
               {assignment.Title} · due {deadlineText}
               {assignment.AcceptLate ? " · late submissions accepted" : ""}
@@ -244,9 +252,9 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-1 max-w-7xl mx-auto w-full mt-6" style={{ borderTop: "0.5px solid #e5e7eb" }}>
+      <div className="flex flex-col lg:flex-row flex-1 max-w-7xl mx-auto w-full mt-6" style={{ borderTop: "0.5px solid #e5e7eb" }}>
         {/* Left — search, filters, student list */}
-        <aside className="w-80 shrink-0 border-r px-4 py-6" style={{ borderColor: "#e5e7eb" }}>
+        <aside className="w-full lg:w-80 lg:shrink-0 border-b lg:border-b-0 lg:border-r px-4 py-4 lg:py-6" style={{ borderColor: "#e5e7eb" }}>
           <div className="relative mb-3">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9ca3af" }} />
             <input
@@ -274,7 +282,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
             ))}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-80 overflow-y-auto lg:max-h-none lg:overflow-visible">
             {visibleSubmissions.map((s) => {
               const isSelected = selectedKey === `s:${s.SubmissionID}`;
               const graded = isGraded(s);
@@ -341,7 +349,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
         </aside>
 
         {/* Center — questions, answers, per-question scores and comments */}
-        <main className="flex-1 px-8 py-8 min-w-0">
+        <main ref={mainRef} className="flex-1 px-4 sm:px-8 py-6 sm:py-8 min-w-0 scroll-mt-4">
           {selectedMissing ? (
             <MissingPanel student={selectedMissing} nameBadge={nameBadge} assignmentTitle={assignment.Title} />
           ) : !selected ? (
@@ -387,7 +395,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
 
                     {/* Comment after every question */}
                     <div className="pl-5 mt-3">
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                         <label htmlFor={`c-${qn.QuestionID}`} className="text-xs font-semibold" style={{ color: "#9ca3af" }}>Comment for student</label>
                         {score !== null && score < qn.MaxScore && (
                           <button
@@ -440,7 +448,7 @@ export default function GradingView({ assignment, initialQuery = "" }: Props) {
 
         {/* Right — submission meta, overall feedback, score, publish */}
         {selected && (
-          <aside className="w-80 shrink-0 border-l px-6 py-8" style={{ borderColor: "#e5e7eb" }}>
+          <aside className="w-full lg:w-80 lg:shrink-0 border-t lg:border-t-0 lg:border-l px-4 sm:px-6 py-6 lg:py-8" style={{ borderColor: "#e5e7eb" }}>
             <p className="text-xs font-semibold mb-1" style={{ color: "#9ca3af" }}>Submission time</p>
             <p className="text-sm font-semibold text-gray-900 mb-2">{formatSubmittedAt(selected.SubmittedAt)}</p>
             {selected.IsLate ? (
@@ -505,7 +513,7 @@ function MissingPanel({
   assignmentTitle: string;
 }) {
   return (
-    <div className="max-w-xl rounded-xl p-8" style={cardStyle}>
+    <div className="max-w-xl rounded-xl p-5 sm:p-8" style={cardStyle}>
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <h2 className="text-lg font-bold text-gray-900">{student.StudentName}</h2>
         {nameBadge(student.NameValid)}

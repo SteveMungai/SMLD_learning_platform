@@ -20,8 +20,8 @@ export default async function AccountPage() {
   return (
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
       <Navbar />
-      <main className="flex-1 px-6 py-16 max-w-3xl w-full mx-auto">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Account settings</h1>
+      <main className="flex-1 px-4 sm:px-6 py-16 max-w-3xl w-full mx-auto">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">Account settings</h1>
         <p className="text-sm mb-10" style={{ color: "#6b7280" }}>Manage your profile and password.</p>
         <AccountSettings
           name={user.FullName}
