@@ -28,3 +28,22 @@ body {
     font-size: 16px;
   }
 }
+
+/* Formatted lesson notes: what lecturers see in the editor and what students read. */
+.note-content { color: #374151; font-size: 15px; line-height: 1.7; overflow-wrap: anywhere; }
+.note-content > * + * { margin-top: 0.75em; }
+.note-content h1 { font-size: 1.6em; font-weight: 700; line-height: 1.25; color: #111; margin-top: 1.2em; }
+.note-content h2 { font-size: 1.3em; font-weight: 700; line-height: 1.3; color: #111; margin-top: 1.1em; }
+.note-content h3 { font-size: 1.1em; font-weight: 700; line-height: 1.35; color: #111; margin-top: 1em; }
+.note-content > :first-child { margin-top: 0; }
+.note-content ul { list-style: disc; padding-left: 1.4em; }
+.note-content ul[data-variant="dash"] { list-style: "\2013\00a0\00a0"; }
+.note-content ol { list-style: decimal; padding-left: 1.5em; }
+.note-content li > p { margin: 0; }
+.note-content li + li { margin-top: 0.3em; }
+.note-content blockquote { border-left: 3px solid #C81E1E; padding-left: 1em; color: #4b5563; }
+.note-content hr { border: 0; border-top: 1px solid #e5e7eb; margin: 1.5em 0; }
+.note-content a { color: #C81E1E; text-decoration: underline; }
+.note-content mark { background: #fde68a; padding: 0 0.15em; border-radius: 2px; }
+/* 16px stops iPhones zooming in when the editor is tapped. */
+.note-editor { font-size: 16px; }

@@ -6,7 +6,7 @@ import type { NoteItem } from "./shared";
 export default function LecturerNotesView({ lessonId, notes }: { lessonId: string; notes: NoteItem[] }) {
   return (
     <>
-      <NotesList notes={notes} emptyText="No notes yet — add them below." />
+      <NotesList notes={notes} emptyText="No notes yet — add them below." lessonId={lessonId} canManage />
       <AddNoteForm lessonId={lessonId} />
       <SectionLink href={`/questions/${lessonId}`}>Continue to questions</SectionLink>
     </>

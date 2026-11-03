@@ -13,7 +13,7 @@ export default async function LessonNotesPage({ params }: { params: Promise<{ le
   const { userId, role, isStaff, lesson } = await requireLessonAccess(lessonId);
 
   const rows = await prisma.note.findMany({ where: { LessonID: lessonId }, orderBy: { NoteID: "asc" } });
-  const notes: NoteItem[] = rows.map((n) => ({ id: n.NoteID, title: n.Title, content: n.Content, hasFile: !!n.FileLink }));
+  const notes: NoteItem[] = rows.map((n) => ({ id: n.NoteID, title: n.Title, content: n.Content, hasFile: !!n.FileLink, fileLink: isStaff ? n.FileLink : null }));
 
   let assignment: AssignmentStatus = null;
   if (!isStaff) {

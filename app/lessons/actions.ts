@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
+import { prepareNoteContent } from "@/lib/notes";
 
 type Result = { error: string | null };
 
@@ -55,17 +56,17 @@ export async function addVideo(lessonId: string, title: string, url: string): Pr
   return { error: null };
 }
 
-/** Add notes to a lesson: written content, a downloadable file link, or both. */
+/** Add notes to a lesson: written content (formatted), a downloadable file link, or both. */
 export async function addNote(lessonId: string, input: { title: string; content: string; url: string }): Promise<Result> {
   const denied = await authorize();
   if (denied) return { error: denied };
 
   const title = input.title.trim();
-  const content = input.content.trim();
   const url = input.url.trim();
+  const prepared = prepareNoteContent(input.content);
+  if (prepared.error) return { error: prepared.error };
   if (!title) return { error: "Give the notes a title." };
-  if (!content && !url) return { error: "Write the notes, add a file link, or both." };
-  if (content.length > 20000) return { error: "That's too long (20,000 characters maximum). Split it into two notes." };
+  if (!prepared.content && !url) return { error: "Write the notes, add a file link, or both." };
 
   let fileLink: string | null = null;
   if (url) {
@@ -77,8 +78,44 @@ export async function addNote(lessonId: string, input: { title: string; content:
   const lesson = await prisma.lesson.findUnique({ where: { LessonID: lessonId } });
   if (!lesson) return { error: "Lesson not found." };
 
-  await prisma.note.create({ data: { LessonID: lessonId, Title: title, Content: content || null, FileLink: fileLink } });
+  await prisma.note.create({ data: { LessonID: lessonId, Title: title, Content: prepared.content, FileLink: fileLink } });
 
+  refresh();
+  return { error: null };
+}
+
+/** Change an existing note's title, text or file link. */
+export async function updateNote(noteId: string, input: { title: string; content: string; url: string }): Promise<Result> {
+  const denied = await authorize();
+  if (denied) return { error: denied };
+
+  const title = input.title.trim();
+  const url = input.url.trim();
+  const prepared = prepareNoteContent(input.content);
+  if (prepared.error) return { error: prepared.error };
+  if (!title) return { error: "Give the notes a title." };
+  if (!prepared.content && !url) return { error: "Write the notes, add a file link, or both." };
+
+  let fileLink: string | null = null;
+  if (url) {
+    const parsed = httpUrl(url);
+    if (typeof parsed === "string") return { error: parsed };
+    fileLink = parsed.toString();
+  }
+
+  const existing = await prisma.note.findUnique({ where: { NoteID: noteId } });
+  if (!existing) return { error: "That note no longer exists." };
+
+  await prisma.note.update({ where: { NoteID: noteId }, data: { Title: title, Content: prepared.content, FileLink: fileLink } });
+
+  refresh();
+  return { error: null };
+}
+
+export async function deleteNote(noteId: string): Promise<Result> {
+  const denied = await authorize();
+  if (denied) return { error: denied };
+  await prisma.note.deleteMany({ where: { NoteID: noteId } });
   refresh();
   return { error: null };
 }

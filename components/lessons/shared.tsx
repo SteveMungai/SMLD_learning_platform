@@ -13,6 +13,7 @@ export interface NoteItem {
   title: string;
   content: string | null;
   hasFile: boolean; // a downloadable file is attached
+  fileLink?: string | null; // the file's address; only sent to lecturers, who can edit it
 }
 
 export const inputStyle = { border: `0.5px solid ${colors.border}`, color: "#111111", background: "#ffffff" };
