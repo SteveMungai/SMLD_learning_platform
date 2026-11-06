@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canManageCohort } from "@/lib/access";
 
 class ApiError extends Error {
   constructor(message: string, public status: number) {
@@ -52,6 +53,12 @@ export async function PUT(req: NextRequest) {
   const { lessonId, publish = false } = body;
   if (!lessonId || !Array.isArray(body.questions)) {
     return NextResponse.json({ error: "Missing lessonId or questions." }, { status: 400 });
+  }
+
+  const target = await prisma.lesson.findUnique({ where: { LessonID: lessonId }, select: { course: { select: { CohortID: true } } } });
+  if (!target) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+  if (!(await canManageCohort({ id: session.user.id, role }, target.course.CohortID))) {
+    return NextResponse.json({ error: "You haven't been added to this lesson's cohort." }, { status: 403 });
   }
 
   const title = (body.title ?? "").trim();

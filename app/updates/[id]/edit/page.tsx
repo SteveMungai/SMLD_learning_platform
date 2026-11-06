@@ -15,7 +15,7 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
   const a = await prisma.announcement.findUnique({ where: { AnnouncementID: id }, include: { cohorts: true } });
   if (!a) notFound();
   if (a.AuthorID !== user.id && user.role !== "ADMIN") redirect("/updates");
-  const { cohorts, lessons } = await formOptions();
+  const { cohorts, lessons } = await formOptions({ id: user.id, role: user.role });
   const now = new Date();
 
   return (

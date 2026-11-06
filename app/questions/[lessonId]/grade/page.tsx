@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; 
 import { prisma } from "@/lib/prisma";
+import { canManageCohort } from "@/lib/access";
 import GradingView from "@/components/GradingView";
 import { isValidFullName } from "@/lib/names";
 import type { GradingAssignmentData } from "@/components/types";
@@ -40,6 +41,8 @@ export default async function GradePage({ params }: PageProps) {
       },
     },
   });
+
+  if (assignment && !(await canManageCohort({ id: session.user.id, role: session.user.role }, assignment.CohortID))) notFound();
 
   if (!assignment) {
     return (

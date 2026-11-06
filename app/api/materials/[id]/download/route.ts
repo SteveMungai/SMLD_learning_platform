@@ -36,7 +36,8 @@ export async function GET(
     select: { Role: true },
   });
 
-  const allowed = user?.Role !== "STUDENT" || !!membership;
+  // Students and lecturers need to be in the cohort; admins can open anything.
+  const allowed = user?.Role === "ADMIN" || !!membership;
 
   if (!allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

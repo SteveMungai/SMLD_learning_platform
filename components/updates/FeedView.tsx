@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import { Users } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import { prisma } from "@/lib/prisma";
 import { eatLong, eatStamp, feedWhere, googleCalendarUrl, isStaff, viewerCohorts, type Viewer } from "@/lib/updates";
 import MarkRead from "@/components/updates/MarkRead";
@@ -48,7 +50,12 @@ export default async function FeedView({ viewer, sp }: { viewer: Viewer; sp: Rec
         ))}
       </div>
 
-      {items.length === 0 && (
+      {items.length === 0 && cohorts !== "all" && cohorts.length === 0 && !filter && (
+        <EmptyState icon={Users} title="You're not in a cohort yet" actions={[{ href: "/join", label: "Join with a code", primary: true }]}>
+          Announcements for your cohort appear here once an admin or lecturer adds you to it.
+        </EmptyState>
+      )}
+      {items.length === 0 && !(cohorts !== "all" && cohorts.length === 0 && !filter) && (
         <p className="text-sm py-10 text-center" style={{ color: "#6b7280" }}>
           {filter ? "Nothing matches this filter." : "No announcements yet. Check back soon."}
         </p>

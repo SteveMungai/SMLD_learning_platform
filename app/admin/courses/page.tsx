@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { cardStyle } from "@/lib/admin";
 import { LessonRow } from "@/components/admin/AdminClient";
+import { AddCourseForm } from "@/components/lessons/AddCourseForm";
 
 type Search = Record<string, string | undefined>;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -36,7 +37,7 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900">Courses &amp; Lessons</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Courses &amp; Lessons</h1>
       <p className="text-sm mt-1 mb-5" style={{ color: "#6b7280" }}>Fix content without waiting for the lecturer.</p>
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -54,6 +55,7 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
         </p>
       )}
 
+      {current && <div className="mb-5"><AddCourseForm cohortId={current.CohortID} /></div>}
       {!current && <p className="text-sm" style={{ color: "#6b7280" }}>No cohorts yet. Create one first.</p>}
       {current && courses.length === 0 && <p className="text-sm" style={{ color: "#6b7280" }}>This cohort has no courses yet.</p>}
       <div className="flex flex-col gap-5">

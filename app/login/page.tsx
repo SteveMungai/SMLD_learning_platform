@@ -43,7 +43,9 @@ function LoginForm() {
       if (result?.error) {
         setError("Invalid email or password. Please try again.");
       } else {
-        router.push("/lessons");
+        // Only follow links that stay on this site (the join link sends people back to /join).
+        const next = params.get("callbackUrl");
+        router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/lessons");
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -53,7 +55,7 @@ function LoginForm() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { callbackUrl: "/lessons" });
   };
 
   return (

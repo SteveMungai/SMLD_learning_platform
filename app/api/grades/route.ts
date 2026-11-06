@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; 
 import { prisma } from "@/lib/prisma";
+import { canManageCohort } from "@/lib/access";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -38,6 +39,10 @@ export async function POST(req: NextRequest) {
 
     if (!submission) {
       return NextResponse.json({ error: "Submission not found." }, { status: 404 });
+    }
+
+    if (!(await canManageCohort({ id: userId, role: role as "INSTRUCTOR" | "ADMIN" }, submission.assignment.CohortID))) {
+      return NextResponse.json({ error: "You haven't been added to this student's cohort." }, { status: 403 });
     }
 
     // Drafts aren't handed in, so there's nothing to grade yet.

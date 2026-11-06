@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mailer";
+import { canManageCohort } from "@/lib/access";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
   });
   if (!assignment || !assignment.DeadlineDate) {
     return NextResponse.json({ error: "No published assignment for this lesson." }, { status: 404 });
+  }
+  if (!(await canManageCohort({ id: me.id, role: me.role }, assignment.CohortID))) {
+    return NextResponse.json({ error: "You haven't been added to this cohort." }, { status: 403 });
   }
   const deadline = assignment.DeadlineDate;
 

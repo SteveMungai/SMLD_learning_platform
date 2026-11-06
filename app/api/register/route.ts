@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { JOIN_PROBLEM, lookupJoinCode } from "@/lib/joinCodes";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, code } = await req.json();
 
     // Basic validation
     if (!name || !email || !password) {
@@ -43,6 +44,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // A join code is optional. If one is given it must work, so nobody ends up with an account that
+    // silently failed to join the cohort they were invited to.
+    const joinCode = typeof code === "string" ? code.trim() : "";
+    let cohort: { CohortID: string; CohortName: string } | null = null;
+    if (joinCode) {
+      const found = await lookupJoinCode(joinCode);
+      if (!found.ok) return NextResponse.json({ message: JOIN_PROBLEM }, { status: 400 });
+      cohort = found.cohort;
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -53,6 +64,8 @@ export async function POST(req: Request) {
         FullName: String(name).trim(),
         Email: emailNormalized,
         Password: hashedPassword,
+        // Created together with the account, so it either all happens or none of it does.
+        ...(cohort ? { cohortMemberships: { create: { CohortID: cohort.CohortID, Status: "ACTIVE" as const } } } : {}),
       },
       select: {
         UserID: true,
@@ -63,7 +76,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { message: "Account created successfully.", user },
+      { message: "Account created successfully.", user, cohort: cohort?.CohortName ?? null },
       { status: 201 }
     );
   } catch (error) {

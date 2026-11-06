@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { adminSession, logAdmin, ROLE_LABEL, type Result } from "@/lib/admin";
+import { renumberLessons } from "@/lib/lessons";
+import { formatJoinCode, uniqueJoinCode } from "@/lib/joinCodes";
+import { fromEat } from "@/lib/updates";
 
 const DENIED: Result = { error: "Only admins can do this." };
 const ROLES = ["STUDENT", "INSTRUCTOR", "ADMIN"] as const;
@@ -160,8 +163,75 @@ export async function deleteLesson(lessonId: string, confirmTitle: string): Prom
   if (!lesson) return { error: "Lesson not found." };
   if (confirmTitle.trim() !== lesson.Title) return { error: "The title doesn't match." };
   await prisma.lesson.delete({ where: { LessonID: lessonId } });
+  await renumberLessons(lesson.CourseID); // later lessons move up: delete lesson 1 and lesson 2 becomes lesson 1
   await logAdmin(admin.id, `Lesson deleted: ${lesson.Title}`, "Lesson", lessonId);
   refresh();
   revalidatePath("/lessons", "layout");
   return { error: null };
+}
+
+// ───────────── Cohort join link ─────────────
+// A cohort's code lets a student join (and new people register straight into it). Switching it off,
+// replacing it or letting it expire stops the old link working. It never gives a role, only a
+// student membership.
+
+async function cohortForJoin(cohortId: string) {
+  return prisma.cohort.findUnique({ where: { CohortID: cohortId }, select: { CohortID: true, CohortName: true, JoinCode: true } });
+}
+
+/** Switch joining by code on. Keeps the current code if there is one. */
+export async function enableJoinCode(cohortId: string): Promise<Result> {
+  const admin = await adminSession();
+  if (!admin) return DENIED;
+  const cohort = await cohortForJoin(cohortId);
+  if (!cohort) return { error: "Cohort not found." };
+  if (cohort.JoinCode) return { error: null };
+  const code = await uniqueJoinCode();
+  await prisma.cohort.update({ where: { CohortID: cohortId }, data: { JoinCode: code, JoinCodeExpiresAt: null } });
+  await logAdmin(admin.id, `Join link turned on: ${cohort.CohortName}`, "Cohort", cohortId);
+  refresh();
+  return { error: null, message: `The code is ${formatJoinCode(code)}.` };
+}
+
+/** A new code. The old link stops working straight away. */
+export async function replaceJoinCode(cohortId: string): Promise<Result> {
+  const admin = await adminSession();
+  if (!admin) return DENIED;
+  const cohort = await cohortForJoin(cohortId);
+  if (!cohort) return { error: "Cohort not found." };
+  const code = await uniqueJoinCode();
+  await prisma.cohort.update({ where: { CohortID: cohortId }, data: { JoinCode: code, JoinCodeExpiresAt: null } });
+  await logAdmin(admin.id, `Join code replaced: ${cohort.CohortName}`, "Cohort", cohortId);
+  refresh();
+  return { error: null, message: `New code: ${formatJoinCode(code)}. The old link no longer works.` };
+}
+
+export async function disableJoinCode(cohortId: string): Promise<Result> {
+  const admin = await adminSession();
+  if (!admin) return DENIED;
+  const cohort = await cohortForJoin(cohortId);
+  if (!cohort) return { error: "Cohort not found." };
+  await prisma.cohort.update({ where: { CohortID: cohortId }, data: { JoinCode: null, JoinCodeExpiresAt: null } });
+  await logAdmin(admin.id, `Join link turned off: ${cohort.CohortName}`, "Cohort", cohortId);
+  refresh();
+  return { error: null };
+}
+
+/** day is "YYYY-MM-DD" (Nairobi); the code stops working at the end of that day. "" means no expiry. */
+export async function setJoinExpiry(cohortId: string, day: string): Promise<Result> {
+  const admin = await adminSession();
+  if (!admin) return DENIED;
+  const cohort = await cohortForJoin(cohortId);
+  if (!cohort) return { error: "Cohort not found." };
+  if (!cohort.JoinCode) return { error: "Turn the join link on first." };
+  let expires: Date | null = null;
+  if (day) {
+    expires = fromEat(day, "23:59");
+    if (!expires) return { error: "That date isn't valid." };
+    if (expires <= new Date()) return { error: "Choose a date that hasn't passed yet." };
+  }
+  await prisma.cohort.update({ where: { CohortID: cohortId }, data: { JoinCodeExpiresAt: expires } });
+  await logAdmin(admin.id, `Join link ${expires ? `set to expire on ${day}` : "expiry cleared"}: ${cohort.CohortName}`, "Cohort", cohortId);
+  refresh();
+  return { error: null, message: expires ? `The code stops working at the end of ${day}.` : "The code no longer expires." };
 }

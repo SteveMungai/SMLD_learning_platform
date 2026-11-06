@@ -38,9 +38,9 @@ export function googleCalendarUrl(title: string, start: Date, details = "") {
   return `https://calendar.google.com/calendar/render?${q.toString()}`;
 }
 
-/** Students: their active cohorts. Staff: every cohort. */
+/** Admins: every cohort. Lecturers and students: the cohorts they belong to. */
 export async function viewerCohorts(v: Viewer): Promise<string[] | "all"> {
-  if (isStaff(v.role)) return "all";
+  if (v.role === "ADMIN") return "all";
   const rows = await prisma.cohortMembership.findMany({ where: { UserID: v.id, Status: "ACTIVE" }, select: { CohortID: true } });
   return rows.map((r) => r.CohortID);
 }
@@ -56,10 +56,10 @@ export function liveWhere(cohorts: string[] | "all", now = new Date()): Prisma.A
   return { AND: [live, { OR: [{ AllCohorts: true }, { cohorts: { some: { CohortID: { in: cohorts } } } }] }] };
 }
 
-/** What a person may see in the feed: students see live ones; lecturers also their own drafts; admins everything. */
+/** What a person may see in the feed: live ones for their cohorts; lecturers also their own drafts; admins everything. */
 export function feedWhere(v: Viewer, cohorts: string[] | "all", now = new Date()): Prisma.AnnouncementWhereInput {
   if (v.role === "ADMIN") return {};
-  if (v.role === "INSTRUCTOR") return { OR: [liveWhere("all", now), { AuthorID: v.id }] };
+  if (v.role === "INSTRUCTOR") return { OR: [liveWhere(cohorts, now), { AuthorID: v.id }] };
   return liveWhere(cohorts, now);
 }
 

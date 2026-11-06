@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth";
 import { ChevronRight } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { inCohorts, manageableCohorts } from "@/lib/access";
+import { BookOpen, Users } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -25,10 +28,11 @@ export default async function QuestionsIndexPage() {
   const role = session.user.role;
   const isStaff = role === "INSTRUCTOR" || role === "ADMIN";
 
-  // Students see lessons from their own cohorts; lecturers see every lesson
-  // (there is no instructor-to-cohort relation yet).
+  // Students see lessons from their own cohorts, lecturers from the cohorts they have been added to,
+  // and admins from every cohort.
+  const staffScope = isStaff ? await manageableCohorts({ id: userId, role }) : [];
   const courses = await prisma.course.findMany({
-    where: isStaff ? {} : { cohort: { memberships: { some: { UserID: userId, Status: "ACTIVE" } } } },
+    where: isStaff ? inCohorts(staffScope) : { cohort: { memberships: { some: { UserID: userId, Status: "ACTIVE" } } } },
     orderBy: [{ CohortID: "asc" }, { Title: "asc" }],
     include: {
       cohort: { select: { CohortName: true } },
@@ -81,9 +85,19 @@ export default async function QuestionsIndexPage() {
           </section>
 
           {courses.length === 0 ? (
-            <p className="text-sm" style={{ color: "#6b7280" }}>
-              {isStaff ? "No lessons have been created yet." : "You are not currently assigned to a cohort."}
-            </p>
+            role === "STUDENT" ? (
+              <EmptyState icon={Users} title="You're not in a cohort yet" actions={[{ href: "/join", label: "Join with a code", primary: true }, { href: "/updates", label: "Go to updates" }]}>
+                Your questions appear here once your lecturer or an admin adds you to a cohort.
+              </EmptyState>
+            ) : role === "INSTRUCTOR" && staffScope.length === 0 ? (
+              <EmptyState icon={Users} title="You haven't been added to a cohort yet" actions={[{ href: "/lessons", label: "Go to lessons" }]}>
+                An admin needs to add you to a cohort before you can set questions.
+              </EmptyState>
+            ) : (
+              <EmptyState icon={BookOpen} title="No lessons yet" actions={[{ href: "/lessons", label: "Go to lessons", primary: true }]}>
+                Add a course and lessons first. Questions are set for each lesson.
+              </EmptyState>
+            )
           ) : (
             <div className="max-w-3xl space-y-12">
               {courses.map((course) => (

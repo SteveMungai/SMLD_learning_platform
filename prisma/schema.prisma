@@ -66,14 +66,17 @@ model VerificationToken {
 }
 
 model Cohort {
-  CohortID      String               @id @default(cuid())
-  CohortName    String
-  AcademicYear  String
-  Description   String?
-  assignments   Assignment[]
-  memberships   CohortMembership[]
-  courses       Course[]
-  announcements AnnouncementCohort[]
+  CohortID          String               @id @default(cuid())
+  CohortName        String
+  AcademicYear      String
+  Description       String?
+  // Invite code for joining this cohort (null = joining by code is off). Expires at the end of that day.
+  JoinCode          String?              @unique
+  JoinCodeExpiresAt DateTime?
+  assignments       Assignment[]
+  memberships       CohortMembership[]
+  courses           Course[]
+  announcements     AnnouncementCohort[]
 }
 
 model CohortMembership {

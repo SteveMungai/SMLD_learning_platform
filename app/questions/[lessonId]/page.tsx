@@ -38,7 +38,8 @@ export default async function QuestionsPage({ params }: PageProps) {
 
   const isStaff = role === "INSTRUCTOR" || role === "ADMIN";
 
-  if (!isStaff) {
+  // Students and lecturers must belong to the lesson's cohort; admins can open any lesson.
+  if (role !== "ADMIN") {
     const membership = await prisma.cohortMembership.findFirst({
       where: { UserID: userId, CohortID: lesson.course.CohortID, Status: "ACTIVE" },
     });

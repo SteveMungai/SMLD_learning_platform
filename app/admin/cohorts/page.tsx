@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { cardStyle } from "@/lib/admin";
+import { eatDay } from "@/lib/updates";
+import JoinLinkPanel from "@/components/admin/JoinLinkPanel";
 import { AddMembersForm, CreateCohortForm, EditCohortForm, RemoveMemberButton } from "@/components/admin/AdminClient";
 
 type Search = Record<string, string | undefined>;
@@ -27,7 +29,7 @@ export default async function AdminCohortsPage({ searchParams }: { searchParams:
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Cohorts</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Cohorts</h1>
         <p className="text-sm mt-1" style={{ color: "#6b7280" }}>Create cohorts and manage who belongs to them.</p>
       </div>
       <CreateCohortForm />
@@ -62,6 +64,13 @@ export default async function AdminCohortsPage({ searchParams }: { searchParams:
             <EditCohortForm key={current.CohortID} cohort={{ id: current.CohortID, name: current.CohortName, year: current.AcademicYear, desc: current.Description ?? "" }} />
           ) : (
             <>
+              <JoinLinkPanel
+                key={`${current.CohortID}-${current.JoinCode ?? "off"}`}
+                cohortId={current.CohortID}
+                code={current.JoinCode}
+                expiresDay={current.JoinCodeExpiresAt ? eatDay(current.JoinCodeExpiresAt) : ""}
+                expired={!!current.JoinCodeExpiresAt && current.JoinCodeExpiresAt <= new Date()}
+              />
               <AddMembersForm cohortId={current.CohortID} />
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

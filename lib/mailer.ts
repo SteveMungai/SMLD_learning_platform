@@ -34,7 +34,7 @@ export async function sendMail({ to, subject, text, html, replyTo }: Mail) {
   });
 
   await transport.sendMail({
-    from: process.env.EMAIL_FROM ?? process.env.SMTP_USER,
+    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
     to,
     replyTo,
     subject,

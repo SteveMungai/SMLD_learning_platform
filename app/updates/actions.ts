@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAdmin, type Result } from "@/lib/admin";
 import { fromEat } from "@/lib/updates";
+import { memberCohortIds } from "@/lib/access";
 import { sendMail } from "@/lib/mailer";
 
 export type AnnouncementInput = {
@@ -34,7 +35,7 @@ async function staff() {
 }
 
 /** Checks the form and turns it into database fields. Returns an error string or the data. */
-async function prepare(input: AnnouncementInput, role: "INSTRUCTOR" | "ADMIN") {
+async function prepare(input: AnnouncementInput, role: "INSTRUCTOR" | "ADMIN", userId: string) {
   const title = input.title.trim();
   const body = input.body.trim();
   if (!title || !body) return "Title and message are required.";
@@ -46,6 +47,10 @@ async function prepare(input: AnnouncementInput, role: "INSTRUCTOR" | "ADMIN") {
   if (!input.allCohorts) {
     const found = await prisma.cohort.count({ where: { CohortID: { in: input.cohortIds } } });
     if (found !== new Set(input.cohortIds).size) return "One of the cohorts no longer exists.";
+    if (role === "INSTRUCTOR") {
+      const mine = new Set(await memberCohortIds(userId));
+      if (input.cohortIds.some((id) => !mine.has(id))) return "You can only post to cohorts you have been added to.";
+    }
   }
   let publishAt = new Date();
   if (input.when === "schedule") {
@@ -114,7 +119,7 @@ async function emailAudience(id: string, title: string, body: string, input: Ann
 export async function createAnnouncement(input: AnnouncementInput): Promise<Result> {
   const me = await staff();
   if (!me) return { error: "Only lecturers and admins can post announcements." };
-  const p = await prepare(input, me.role);
+  const p = await prepare(input, me.role, me.id);
   if (typeof p === "string") return { error: p };
 
   const created = await prisma.announcement.create({
@@ -145,7 +150,7 @@ export async function updateAnnouncement(id: string, input: AnnouncementInput): 
   const existing = await prisma.announcement.findUnique({ where: { AnnouncementID: id } });
   if (!existing) return { error: "Announcement not found." };
   if (existing.AuthorID !== me.id && me.role !== "ADMIN") return { error: "You can only edit your own announcements." };
-  const p = await prepare(input, me.role);
+  const p = await prepare(input, me.role, me.id);
   if (typeof p === "string") return { error: p };
   // Editing something already live must not move it back to the top as if it were new.
   if (input.when === "now" && existing.Published && existing.PublishAt <= new Date()) p.data.PublishAt = existing.PublishAt;

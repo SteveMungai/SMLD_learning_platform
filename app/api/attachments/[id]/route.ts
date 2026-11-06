@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canManageCohort } from "@/lib/access";
 
 // Streams a submitted file. Only the student who submitted it and lecturers/admins may open it.
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,12 +13,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const attachment = await prisma.attachment.findUnique({
     where: { AttachmentID: id },
-    include: { file: true, submission: { select: { StudentID: true } } },
+    include: { file: true, submission: { select: { StudentID: true, assignment: { select: { CohortID: true } } } } },
   });
   if (!attachment?.file) return NextResponse.json({ error: "File not found." }, { status: 404 });
 
-  const isStaff = session.user.role === "INSTRUCTOR" || session.user.role === "ADMIN";
-  if (!isStaff && attachment.submission.StudentID !== session.user.id) {
+  // The student who submitted it, or staff for that cohort (a lecturer only for cohorts they belong to).
+  const isOwner = attachment.submission.StudentID === session.user.id;
+  const canGrade = await canManageCohort({ id: session.user.id, role: session.user.role }, attachment.submission.assignment.CohortID);
+  if (!isOwner && !canGrade) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 

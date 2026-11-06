@@ -8,6 +8,13 @@ import { isValidFullName } from "@/lib/names";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GradesLandingClient, { type GradesCohort, type StudentStatus } from "@/components/GradesLandingClient";
+import { BookOpen, Users } from "lucide-react";
+import { inCohorts, manageableCohorts } from "@/lib/access";
+import StatePage from "@/components/StatePage";
+import EmptyState from "@/components/EmptyState";
+
+// The lecturer view loads a lot of related rows, so allow it more time than the default on Vercel.
+export const maxDuration = 30;
 
 const cardStyle = { background: "#ffffff", border: "0.5px solid #e5e7eb" };
 
@@ -18,9 +25,11 @@ export default async function GradesPage() {
   const userId = session.user.id;
   const isStaff = session.user.role === "INSTRUCTOR" || session.user.role === "ADMIN";
 
-  // Lecturer / admin: every cohort
+  // ───────────────────────────── Lecturer / admin: their cohorts (admins: all) ─────────────────────────────
   if (isStaff) {
+    const scope = await manageableCohorts({ id: userId, role: session.user.role });
     const cohorts = await prisma.cohort.findMany({
+      where: scope === "all" ? {} : { CohortID: { in: scope } },
       orderBy: { CohortName: "asc" },
       include: {
         memberships: {
@@ -49,6 +58,22 @@ export default async function GradesPage() {
         },
       },
     });
+
+    if (cohorts.length === 0) {
+      return (
+        <StatePage heading="Grades">
+          {session.user.role === "ADMIN" ? (
+            <EmptyState icon={BookOpen} title="No cohorts yet" actions={[{ href: "/admin/cohorts", label: "Create a cohort", primary: true }]}>
+              Grades appear here once a cohort has lessons with submitted work.
+            </EmptyState>
+          ) : (
+            <EmptyState icon={Users} title="You haven't been added to a cohort yet" actions={[{ href: "/lessons", label: "Go to lessons" }]}>
+              An admin needs to add you to a cohort before you can see its grades.
+            </EmptyState>
+          )}
+        </StatePage>
+      );
+    }
 
     const data: GradesCohort[] = cohorts.map((cohort) => {
       const roster = cohort.memberships.map((m) => m.user);
@@ -109,7 +134,7 @@ export default async function GradesPage() {
     return <GradesLandingClient cohorts={data} />;
   }
 
-  // Student: their own results
+  // ───────────────────────────── Student: their own results ─────────────────────────────
   const courses = await prisma.course.findMany({
     where: { cohort: { memberships: { some: { UserID: userId, Status: "ACTIVE" } } } },
     orderBy: { Title: "asc" },
@@ -135,7 +160,9 @@ export default async function GradesPage() {
         <p className="text-sm mb-10" style={{ color: "#6b7280" }}>Your results and your lecturer&apos;s comments for each lesson.</p>
 
         {courses.length === 0 ? (
-          <p className="text-sm" style={{ color: "#6b7280" }}>You are not currently assigned to a cohort.</p>
+          <EmptyState icon={Users} title="You're not in a cohort yet" actions={[{ href: "/join", label: "Join with a code", primary: true }, { href: "/updates", label: "Go to updates" }]}>
+            Your grades appear here once your lecturer or an admin adds you to a cohort and you have submitted work.
+          </EmptyState>
         ) : (
           <div className="space-y-12">
             {courses.map((course) => (

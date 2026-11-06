@@ -1,7 +1,7 @@
 // lib/lessonAccess.ts
 //
 // One check shared by the lesson sub-pages (video, notes): you must be signed in, the lesson
-// must exist, and students must belong to the lesson's cohort. Lecturers/admins can open any lesson.
+// must exist, and students and lecturers must belong to the lesson's cohort. Only admins can open any lesson.
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -23,7 +23,7 @@ export async function requireLessonAccess(lessonId: string) {
   const role = session.user.role;
   const isStaff = role === "INSTRUCTOR" || role === "ADMIN";
 
-  if (!isStaff) {
+  if (role !== "ADMIN") {
     const membership = await prisma.cohortMembership.findFirst({
       where: { UserID: session.user.id, CohortID: lesson.course.CohortID, Status: "ACTIVE" },
     });

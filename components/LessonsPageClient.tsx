@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { PlayCircle, Headphones, FileText, Video as VideoIcon, ChevronDown } from "lucide-react";
+import { PlayCircle, Headphones, FileText, Video as VideoIcon, ChevronDown, BookOpen } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AddLessonForm } from "@/components/lessons/AddLessonForm";
+import { AddCourseForm } from "@/components/lessons/AddCourseForm";
+import EmptyState from "@/components/EmptyState";
 
 export type LessonSummary = {
   LessonID: string;
@@ -108,6 +110,17 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
 
           {/* Courses + lessons for the selected cohort */}
           <div className="space-y-12 max-w-3xl">
+            {selectedCohort.courses.length === 0 && (
+              isStaff ? (
+                <EmptyState icon={BookOpen} title="Create the first course" extra={<div className="w-full text-left"><AddCourseForm cohortId={selectedCohort.CohortID} startOpen /></div>}>
+                  Lessons live inside a course. Name the course for {selectedCohort.CohortName}, then use <b>Add lesson</b> to start adding lessons.
+                </EmptyState>
+              ) : (
+                <EmptyState icon={BookOpen} title="No lessons yet" actions={[{ href: "/updates", label: "Check updates" }]}>
+                  Your lecturer hasn&apos;t added any lessons to {selectedCohort.CohortName} yet. They will appear here when they do.
+                </EmptyState>
+              )
+            )}
             {selectedCohort.courses.map((course) => (
               <section key={course.CourseID}>
                 <div className="flex flex-wrap items-end justify-between gap-3 mb-4 pb-2" style={{ borderBottom: "0.5px solid #e5e7eb" }}>
@@ -149,11 +162,14 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
                       </Link>
                     ))}
                   {course.lessons.length === 0 && (
-                    <p className="text-sm" style={{ color: "#9ca3af" }}>No lessons in this course yet.</p>
+                    <p className="text-sm" style={{ color: "#6b7280" }}>{isStaff ? "No lessons yet. Use Add lesson to create the first one." : "No lessons in this course yet."}</p>
                   )}
                 </div>
               </section>
             ))}
+            {isStaff && selectedCohort.courses.length > 0 && (
+              <div className="pt-2"><AddCourseForm cohortId={selectedCohort.CohortID} /></div>
+            )}
           </div>
         </main>
       </div>

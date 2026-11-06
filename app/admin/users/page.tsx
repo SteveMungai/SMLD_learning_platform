@@ -54,7 +54,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
       <p className="text-sm mt-1 mb-5" style={{ color: "#6b7280" }}>Search people, change roles and manage cohorts.</p>
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
@@ -98,7 +98,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                       <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: ROLE_CHIP[u.Role].bg, color: ROLE_CHIP[u.Role].fg }}>{ROLE_LABEL[u.Role]}</span>
                     </td>
                     <td className="px-4 py-3" style={{ color: "#6b7280" }}>
-                      {u.Role !== "STUDENT" ? "All cohorts" : u.cohortMemberships.map((m) => m.cohort.CohortName).join(", ") || "None"}
+                      {u.Role === "ADMIN" ? "All cohorts" : u.cohortMemberships.map((m) => m.cohort.CohortName).join(", ") || "None"}
                     </td>
                   </tr>
                 ))}

@@ -8,7 +8,7 @@ export default async function NewAnnouncementPage() {
   const user = (await getServerSession(authOptions))?.user;
   if (!user?.id) redirect("/login");
   if (user.role === "STUDENT") redirect("/updates");
-  const { cohorts, lessons } = await formOptions();
+  const { cohorts, lessons } = await formOptions({ id: user.id, role: user.role });
 
   return (
     <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
