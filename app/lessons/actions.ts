@@ -6,9 +6,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import { prepareNoteContent } from "@/lib/notes";
-import { canManageCohort, NOT_IN_COHORT, type Role } from "@/lib/access";
+import { canManageCohort, currentActor, NOT_IN_COHORT, type Role } from "@/lib/access";
+import { logAdmin } from "@/lib/admin";
+import { renumberLessons } from "@/lib/lessons";
 
-type Result = { error: string | null };
+type Result = { error: string | null; id?: string };
 
 // Staff only, and a lecturer only in a cohort an admin has added them to (admins: any cohort).
 async function authorize(cohortId?: string): Promise<string | null> {
@@ -72,60 +74,44 @@ export async function addVideo(lessonId: string, title: string, url: string): Pr
   return { error: null };
 }
 
-/** Add notes to a lesson: written content (formatted), a downloadable file link, or both. */
-export async function addNote(lessonId: string, input: { title: string; content: string; url: string }): Promise<Result> {
+/** Add notes to a lesson: formatted text, a PDF (uploaded separately), or both. Returns the new note's id. */
+export async function addNote(lessonId: string, input: { title: string; content: string; hasFile: boolean }): Promise<Result> {
   const denied = await authorizeLesson(lessonId);
   if (denied) return { error: denied };
 
   const title = input.title.trim();
-  const url = input.url.trim();
   const prepared = prepareNoteContent(input.content);
   if (prepared.error) return { error: prepared.error };
   if (!title) return { error: "Give the notes a title." };
-  if (!prepared.content && !url) return { error: "Write the notes, add a file link, or both." };
-
-  let fileLink: string | null = null;
-  if (url) {
-    const parsed = httpUrl(url);
-    if (typeof parsed === "string") return { error: parsed };
-    fileLink = parsed.toString();
-  }
+  if (!prepared.content && !input.hasFile) return { error: "Write the notes, attach a PDF, or both." };
 
   const lesson = await prisma.lesson.findUnique({ where: { LessonID: lessonId } });
   if (!lesson) return { error: "Lesson not found." };
 
-  await prisma.note.create({ data: { LessonID: lessonId, Title: title, Content: prepared.content, FileLink: fileLink } });
+  const note = await prisma.note.create({ data: { LessonID: lessonId, Title: title, Content: prepared.content }, select: { NoteID: true } });
 
   refresh();
-  return { error: null };
+  return { error: null, id: note.NoteID };
 }
 
-/** Change an existing note's title, text or file link. */
-export async function updateNote(noteId: string, input: { title: string; content: string; url: string }): Promise<Result> {
+/** Change an existing note's title or text. (Its PDF is attached, replaced or removed separately.) */
+export async function updateNote(noteId: string, input: { title: string; content: string; hasFile: boolean }): Promise<Result> {
   const denied = await authorizeNote(noteId);
   if (denied) return { error: denied };
 
   const title = input.title.trim();
-  const url = input.url.trim();
   const prepared = prepareNoteContent(input.content);
   if (prepared.error) return { error: prepared.error };
   if (!title) return { error: "Give the notes a title." };
-  if (!prepared.content && !url) return { error: "Write the notes, add a file link, or both." };
-
-  let fileLink: string | null = null;
-  if (url) {
-    const parsed = httpUrl(url);
-    if (typeof parsed === "string") return { error: parsed };
-    fileLink = parsed.toString();
-  }
+  if (!prepared.content && !input.hasFile) return { error: "Write the notes, attach a PDF, or both." };
 
   const existing = await prisma.note.findUnique({ where: { NoteID: noteId } });
   if (!existing) return { error: "That note no longer exists." };
 
-  await prisma.note.update({ where: { NoteID: noteId }, data: { Title: title, Content: prepared.content, FileLink: fileLink } });
+  await prisma.note.update({ where: { NoteID: noteId }, data: { Title: title, Content: prepared.content } });
 
   refresh();
-  return { error: null };
+  return { error: null, id: noteId };
 }
 
 export async function deleteNote(noteId: string): Promise<Result> {
@@ -178,5 +164,82 @@ export async function addLesson(input: { courseId: string; title: string }): Pro
   });
 
   refresh();
+  return { error: null };
+}
+
+// ───────────── Rename and delete courses and lessons ─────────────
+// A lecturer can do this in the cohorts they have been added to, an admin in any cohort. Deleting asks
+// for the title to be typed back, because it also removes everything inside (notes, videos, assignments,
+// and students' submissions and grades). Every change is written to the activity log.
+
+function refreshAll() {
+  refresh();
+  revalidatePath("/admin", "layout");
+}
+
+export async function renameCourse(courseId: string, title: string): Promise<Result> {
+  const denied = await authorizeCourse(courseId);
+  if (denied) return { error: denied };
+  const clean = title.trim().replace(/\s+/g, " ");
+  if (clean.length < 2) return { error: "Give the course a title." };
+  if (clean.length > 120) return { error: "That title is too long (120 characters maximum)." };
+
+  const course = await prisma.course.findUnique({ where: { CourseID: courseId }, select: { CohortID: true, Title: true } });
+  if (!course) return { error: "Course not found." };
+  const duplicate = await prisma.course.findFirst({
+    where: { CohortID: course.CohortID, Title: { equals: clean, mode: "insensitive" }, NOT: { CourseID: courseId } },
+    select: { CourseID: true },
+  });
+  if (duplicate) return { error: "This cohort already has a course with that title." };
+
+  await prisma.course.update({ where: { CourseID: courseId }, data: { Title: clean } });
+  const me = await currentActor();
+  if (me) await logAdmin(me.id, `Course renamed: "${course.Title}" to "${clean}"`, "Course", courseId);
+  refreshAll();
+  return { error: null };
+}
+
+export async function deleteCourse(courseId: string, confirmTitle: string): Promise<Result> {
+  const denied = await authorizeCourse(courseId);
+  if (denied) return { error: denied };
+  const course = await prisma.course.findUnique({ where: { CourseID: courseId }, select: { Title: true } });
+  if (!course) return { error: null };
+  if (confirmTitle.trim() !== course.Title) return { error: "The title doesn't match." };
+
+  await prisma.course.delete({ where: { CourseID: courseId } });
+  const me = await currentActor();
+  if (me) await logAdmin(me.id, `Course deleted: ${course.Title}`, "Course", courseId);
+  refreshAll();
+  return { error: null };
+}
+
+export async function renameLesson(lessonId: string, title: string): Promise<Result> {
+  const denied = await authorizeLesson(lessonId);
+  if (denied) return { error: denied };
+  const clean = title.trim().replace(/\s+/g, " ");
+  if (!clean) return { error: "Give the lesson a title." };
+  if (clean.length > 150) return { error: "That title is too long (150 characters maximum)." };
+
+  const lesson = await prisma.lesson.findUnique({ where: { LessonID: lessonId }, select: { Title: true } });
+  if (!lesson) return { error: "Lesson not found." };
+  await prisma.lesson.update({ where: { LessonID: lessonId }, data: { Title: clean } });
+  const me = await currentActor();
+  if (me) await logAdmin(me.id, `Lesson renamed: "${lesson.Title}" to "${clean}"`, "Lesson", lessonId);
+  refreshAll();
+  return { error: null };
+}
+
+export async function deleteLesson(lessonId: string, confirmTitle: string): Promise<Result> {
+  const denied = await authorizeLesson(lessonId);
+  if (denied) return { error: denied };
+  const lesson = await prisma.lesson.findUnique({ where: { LessonID: lessonId }, select: { Title: true, CourseID: true } });
+  if (!lesson) return { error: null };
+  if (confirmTitle.trim() !== lesson.Title) return { error: "The title doesn't match." };
+
+  await prisma.lesson.delete({ where: { LessonID: lessonId } });
+  await renumberLessons(lesson.CourseID); // later lessons move up
+  const me = await currentActor();
+  if (me) await logAdmin(me.id, `Lesson deleted: ${lesson.Title}`, "Lesson", lessonId);
+  refreshAll();
   return { error: null };
 }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && node scripts/copy-pdf-worker.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -28,6 +28,7 @@
     "next": "16.2.7",
     "next-auth": "^4.24.14",
     "nodemailer": "^7.0.13",
+    "pdfjs-dist": "^6.5.438",
     "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

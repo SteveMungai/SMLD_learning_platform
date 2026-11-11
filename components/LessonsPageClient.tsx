@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import { AddLessonForm } from "@/components/lessons/AddLessonForm";
 import { AddCourseForm } from "@/components/lessons/AddCourseForm";
 import EmptyState from "@/components/EmptyState";
+import { ManageControls } from "@/components/lessons/ManageControls";
+import { formatDay } from "@/lib/noteFiles";
 
 export type LessonSummary = {
   LessonID: string;
@@ -19,11 +21,15 @@ export type LessonSummary = {
   hasZoom: boolean;
   // Who added the lesson (null for lessons created before this was recorded).
   lecturerName: string | null;
+  DateCreated: string; // ISO date the lesson was added
+  impact: string; // what deleting it would remove (lecturers and admins only)
 };
 
 export type CourseWithLessons = {
   CourseID: string;
   Title: string;
+  DateCreated: string; // ISO date the course was added
+  impact: string; // what deleting it would remove (lecturers and admins only)
   lessons: LessonSummary[];
 };
 
@@ -78,7 +84,7 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
       <Navbar />
 
       <div className="flex flex-1 max-w-7xl mx-auto w-full">
-        <main className="flex-1 px-6 py-16">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 py-12 sm:py-16">
           <section className="max-w-3xl mb-10">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-4">Lessons</h1>
             <p className="text-[15px] leading-relaxed" style={{ color: "#6b7280" }}>
@@ -109,7 +115,7 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
           </div>
 
           {/* Courses + lessons for the selected cohort */}
-          <div className="space-y-12 max-w-3xl">
+          <div className="space-y-12">
             {selectedCohort.courses.length === 0 && (
               isStaff ? (
                 <EmptyState icon={BookOpen} title="Create the first course" extra={<div className="w-full text-left"><AddCourseForm cohortId={selectedCohort.CohortID} startOpen /></div>}>
@@ -124,47 +130,58 @@ export default function LessonsPageClient({ cohorts, isStaff = false }: { cohort
             {selectedCohort.courses.map((course) => (
               <section key={course.CourseID}>
                 <div className="flex flex-wrap items-end justify-between gap-3 mb-4 pb-2" style={{ borderBottom: "0.5px solid #e5e7eb" }}>
-                  <h2 className="text-xl font-bold text-gray-900">{course.Title}</h2>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold text-gray-900 break-words">{course.Title}</h2>
+                    <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Added {formatDay(course.DateCreated)} · {course.lessons.length} {course.lessons.length === 1 ? "lesson" : "lessons"}</p>
+                  </div>
                   {isStaff && <AddLessonForm courseId={course.CourseID} />}
                 </div>
+                {isStaff && (
+                  <div className="mb-4">
+                    <ManageControls kind="course" id={course.CourseID} title={course.Title} impact={course.impact} />
+                  </div>
+                )}
 
-                <div className="space-y-3">
+                {/* Cards fill the width: one column on phones, two on tablets, three on large screens. */}
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                   {[...course.lessons]
                     .sort((a, b) => a.SequenceOrder - b.SequenceOrder)
                     .map((lesson) => (
-                      <Link
-                        key={lesson.LessonID}
-                        href={`/lessons/${lesson.LessonID}/video`}
-                        style={cardStyle}
-                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 rounded-xl transition-all duration-200 hover:shadow-sm cursor-pointer"
-                      >
-                        <div className="flex items-center min-w-0">
-                          <span
-                            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold mr-4"
-                            style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", color: "#6b7280" }}
-                          >
-                            {lesson.SequenceOrder}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[15px] font-semibold text-gray-900 truncate">{lesson.Title}</p>
-                            {lesson.lecturerName && (
-                              <p className="text-xs truncate" style={{ color: "#9ca3af" }}>By {lesson.lecturerName}</p>
-                            )}
+                      <div key={lesson.LessonID} style={cardStyle} className="flex flex-col rounded-xl transition-shadow duration-200 hover:shadow-sm">
+                        <Link href={`/lessons/${lesson.LessonID}/video`} className="flex flex-col gap-3 p-4 sm:p-5 flex-1 no-underline">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <span
+                              className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold"
+                              style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", color: "#6b7280" }}
+                            >
+                              {lesson.SequenceOrder}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-[15px] font-semibold text-gray-900 break-words leading-snug">{lesson.Title}</p>
+                              <p className="text-xs mt-1" style={{ color: "#6b7280" }}>
+                                {lesson.lecturerName ? `By ${lesson.lecturerName} · ` : ""}Added {formatDay(lesson.DateCreated)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 pl-[52px] sm:pl-0 sm:flex-shrink-0 sm:ml-4">
-                          <ContentBadge active={lesson.hasVideo} icon={PlayCircle} label="Video" />
-                          <ContentBadge active={lesson.hasAudio} icon={Headphones} label="Audio" />
-                          <ContentBadge active={lesson.hasNotes} icon={FileText} label="Notes" />
-                          <ContentBadge active={lesson.hasZoom} icon={VideoIcon} label="Zoom recording" />
-                        </div>
-                      </Link>
+                          <div className="flex flex-wrap items-center gap-2 pl-12 mt-auto">
+                            <ContentBadge active={lesson.hasVideo} icon={PlayCircle} label="Video" />
+                            <ContentBadge active={lesson.hasAudio} icon={Headphones} label="Audio" />
+                            <ContentBadge active={lesson.hasNotes} icon={FileText} label="Notes" />
+                            <ContentBadge active={lesson.hasZoom} icon={VideoIcon} label="Zoom recording" />
+                            {!lesson.hasVideo && !lesson.hasAudio && !lesson.hasNotes && !lesson.hasZoom && <span className="text-xs" style={{ color: "#9ca3af" }}>Nothing added yet</span>}
+                          </div>
+                        </Link>
+                        {isStaff && (
+                          <div className="px-4 sm:px-5 pb-3 pt-1" style={{ borderTop: "0.5px solid #f3f4f6" }}>
+                            <ManageControls kind="lesson" id={lesson.LessonID} title={lesson.Title} impact={lesson.impact ? `This permanently removes: ${lesson.impact}.` : "This lesson has no content yet."} />
+                          </div>
+                        )}
+                      </div>
                     ))}
-                  {course.lessons.length === 0 && (
-                    <p className="text-sm" style={{ color: "#6b7280" }}>{isStaff ? "No lessons yet. Use Add lesson to create the first one." : "No lessons in this course yet."}</p>
-                  )}
                 </div>
+                {course.lessons.length === 0 && (
+                  <p className="text-sm" style={{ color: "#6b7280" }}>{isStaff ? "No lessons yet. Use Add lesson to create the first one." : "No lessons in this course yet."}</p>
+                )}
               </section>
             ))}
             {isStaff && selectedCohort.courses.length > 0 && (

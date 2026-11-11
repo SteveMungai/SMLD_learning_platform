@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { cardStyle } from "@/lib/admin";
 import { LessonRow } from "@/components/admin/AdminClient";
 import { AddCourseForm } from "@/components/lessons/AddCourseForm";
+import { ManageControls } from "@/components/lessons/ManageControls";
+import { formatDay } from "@/lib/noteFiles";
 
 type Search = Record<string, string | undefined>;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -63,8 +65,16 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
           const lessons = onlyMissing ? course.lessons.filter((l) => !l.createdBy) : course.lessons;
           return (
             <section key={course.CourseID} className="rounded-xl p-5" style={cardStyle}>
-              <h2 className="text-lg font-bold text-gray-900 mb-1">{course.Title}</h2>
-              <p className="text-xs mb-2" style={{ color: "#6b7280" }}>Add new lessons from the Lessons page.</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-1 break-words">{course.Title}</h2>
+              <p className="text-xs mb-1" style={{ color: "#6b7280" }}>Added {formatDay(course.DateCreated)} · Add new lessons from the Lessons page.</p>
+              <div className="mb-3">
+                <ManageControls
+                  kind="course"
+                  id={course.CourseID}
+                  title={course.Title}
+                  impact={course.lessons.length === 0 ? "This course has no lessons." : `This permanently removes ${course.lessons.length} lesson${course.lessons.length === 1 ? "" : "s"} with all their notes, videos and assignments, and ${course.lessons.reduce((n, l) => n + l.assignments.reduce((m, a) => m + a._count.submissions, 0), 0)} student submission(s) with their grades.`}
+                />
+              </div>
               {lessons.length === 0 && <p className="text-sm py-3" style={{ color: "#6b7280" }}>{onlyMissing ? "Every lesson here has a lecturer." : "No lessons yet."}</p>}
               {lessons.map((l) => {
                 const submissions = l.assignments.reduce((n, a) => n + a._count.submissions, 0);
@@ -79,7 +89,7 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
                   <LessonRow
                     key={l.LessonID}
                     lesson={{ id: l.LessonID, order: l.SequenceOrder, title: l.Title, lecturerId: l.CreatedByID ?? "", lecturerName: l.createdBy?.FullName ?? null,
-                      content: impact.length ? "Has content" : "No content yet", impact }}
+                      content: `${impact.length ? "Has content" : "No content yet"} · Added ${formatDay(l.DateCreated)}`, impact }}
                     lecturers={lecturers.map((u) => ({ id: u.UserID, name: u.FullName ?? u.Email }))}
                     isFirst={idx === 0}
                     isLast={idx === course.lessons.length - 1}

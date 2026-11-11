@@ -47,3 +47,8 @@ body {
 .note-content mark { background: #fde68a; padding: 0 0.15em; border-radius: 2px; }
 /* 16px stops iPhones zooming in when the editor is tapped. */
 .note-editor { font-size: 16px; }
+
+/* Documents shown in the on-screen viewer are left out of anything printed. */
+@media print {
+  .secure-doc { display: none !important; }
+}

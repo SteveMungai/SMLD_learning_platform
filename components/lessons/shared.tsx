@@ -12,8 +12,9 @@ export interface NoteItem {
   id: string;
   title: string;
   content: string | null;
-  hasFile: boolean; // a downloadable file is attached
-  fileLink?: string | null; // the file's address; only sent to lecturers, who can edit it
+  dateUploaded: string; // ISO date the note was added
+  file: { name: string; sizeKB: number } | null; // a PDF shown in the on-screen viewer (never downloadable)
+  hasLegacyLink: boolean; // an old external link from before notes could be uploaded
 }
 
 export const inputStyle = { border: `0.5px solid ${colors.border}`, color: "#111111", background: "#ffffff" };

@@ -11,7 +11,7 @@ export default function EditableNote({
   lessonId, note, children,
 }: {
   lessonId: string;
-  note: { id: string; title: string; html: string; fileLink: string };
+  note: { id: string; title: string; html: string; file: { name: string; sizeKB: number } | null; legacyLink: boolean };
   children: React.ReactNode;
 }) {
   const router = useRouter();

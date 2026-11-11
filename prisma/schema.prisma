@@ -96,6 +96,7 @@ model Course {
   CohortID    String
   Title       String
   Description String?
+  DateCreated DateTime @default(now())
   cohort      Cohort   @relation(fields: [CohortID], references: [CohortID], onDelete: Cascade)
   lessons     Lesson[]
 }
@@ -147,12 +148,25 @@ model ZoomMeeting {
 }
 
 model Note {
-  NoteID   String  @id @default(cuid())
-  LessonID String
-  Title    String
-  Content  String?
-  FileLink String?
-  lesson   Lesson  @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+  NoteID       String    @id @default(cuid())
+  LessonID     String
+  Title        String
+  Content      String?
+  // Legacy: an external link from before notes could be uploaded. No longer shown to students.
+  FileLink     String?
+  DateUploaded DateTime  @default(now())
+  file         NoteFile?
+  lesson       Lesson    @relation(fields: [LessonID], references: [LessonID], onDelete: Cascade)
+}
+
+// A PDF a lecturer attached to a note. Kept in its own table so listing notes never loads the file.
+// Students read it in the on-screen viewer; there is no download.
+model NoteFile {
+  NoteID   String @id
+  FileName String
+  SizeKB   Int
+  Data     Bytes
+  note     Note   @relation(fields: [NoteID], references: [NoteID], onDelete: Cascade)
 }
 
 model Assignment {

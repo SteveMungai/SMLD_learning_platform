@@ -34,6 +34,7 @@ export default async function LessonsPage() {
               notes: { select: { NoteID: true } },
               zoomMeetings: { select: { MeetingID: true } },
               createdBy: { select: { FullName: true } },
+              assignments: { select: { _count: { select: { submissions: true } } } },
             },
           },
         },
@@ -64,6 +65,8 @@ export default async function LessonsPage() {
     );
   }
 
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
   const data: CohortOption[] = cohorts.map((c) => ({
     CohortID: c.CohortID,
     CohortName: c.CohortName,
@@ -71,6 +74,16 @@ export default async function LessonsPage() {
     courses: c.courses.map((course) => ({
       CourseID: course.CourseID,
       Title: course.Title,
+      DateCreated: course.DateCreated.toISOString(),
+      // What deleting the course would remove, shown to lecturers and admins before they confirm.
+      impact: !isStaff
+        ? ""
+        : course.lessons.length === 0
+          ? "This course has no lessons."
+          : `This permanently removes ${plural(course.lessons.length, "lesson")} with all their notes, videos and assignments, and ${plural(
+              course.lessons.reduce((n, l) => n + l.assignments.reduce((m, a) => m + a._count.submissions, 0), 0),
+              "student submission",
+            )} with their grades.`,
       lessons: course.lessons.map((l) => ({
         LessonID: l.LessonID,
         Title: l.Title,
@@ -80,6 +93,17 @@ export default async function LessonsPage() {
         hasNotes: l.notes.length > 0,
         hasZoom: l.zoomMeetings.length > 0,
         lecturerName: l.createdBy?.FullName ?? null,
+        DateCreated: l.DateCreated.toISOString(),
+        impact: !isStaff
+          ? ""
+          : [
+              l.video && "1 video",
+              l.audio && "1 audio",
+              l.notes.length > 0 && plural(l.notes.length, "note"),
+              l.zoomMeetings.length > 0 && plural(l.zoomMeetings.length, "Zoom meeting"),
+              l.assignments.length > 0 &&
+                `${plural(l.assignments.length, "assignment")} with ${plural(l.assignments.reduce((m, a) => m + a._count.submissions, 0), "student submission")} and their grades`,
+            ].filter((x): x is string => typeof x === "string").join(", "),
       })),
     })),
   }));

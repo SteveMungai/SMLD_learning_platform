@@ -31,6 +31,8 @@ export default function QuestionsPageClient({
   const [previewAs, setPreviewAs] = useState<"INSTRUCTOR" | "STUDENT">("STUDENT");
 
   const effectiveRole = isAuthenticated ? role : previewAs;
+  // Lecturers and admins both set up the assignment; only students answer it.
+  const isStaffView = effectiveRole === "INSTRUCTOR" || effectiveRole === "ADMIN";
 
   return (
     <div style={{ background: "#ffffff" }} className="min-h-screen flex flex-col font-sans antialiased">
@@ -55,7 +57,7 @@ export default function QuestionsPageClient({
                 {lesson ? `Lesson ${lesson.SequenceOrder}: ${lesson.Title}` : "Assignment"}
               </h1>
               <p className="text-sm" style={{ color: "#6b7280" }}>
-                {effectiveRole === "INSTRUCTOR"
+                {isStaffView
                   ? "Set up questions, deadline, and scoring for students."
                   : "Answer each question, attach files if needed, then submit."}
               </p>
@@ -102,7 +104,7 @@ export default function QuestionsPageClient({
           )}
 
           <div className="max-w-3xl">
-            {effectiveRole === "INSTRUCTOR" ? (
+            {isStaffView ? (
               <LecturerQuestionsView
                 lessonId={lessonId}
                 assignment={assignment}

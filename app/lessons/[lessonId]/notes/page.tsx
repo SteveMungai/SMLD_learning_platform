@@ -1,3 +1,5 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireLessonAccess } from "@/lib/lessonAccess";
 import LessonShell from "@/components/lessons/LessonShell";
@@ -12,8 +14,23 @@ export default async function LessonNotesPage({ params }: { params: Promise<{ le
   const { lessonId } = await params;
   const { userId, role, isStaff, lesson } = await requireLessonAccess(lessonId);
 
-  const rows = await prisma.note.findMany({ where: { LessonID: lessonId }, orderBy: { NoteID: "asc" } });
-  const notes: NoteItem[] = rows.map((n) => ({ id: n.NoteID, title: n.Title, content: n.Content, hasFile: !!n.FileLink, fileLink: isStaff ? n.FileLink : null }));
+  const rows = await prisma.note.findMany({
+    where: { LessonID: lessonId },
+    orderBy: [{ DateUploaded: "asc" }, { NoteID: "asc" }],
+   
+    include: { file: { select: { FileName: true, SizeKB: true } } },
+  });
+  const notes: NoteItem[] = rows.map((n) => ({
+    id: n.NoteID,
+    title: n.Title,
+    content: n.Content,
+    dateUploaded: n.DateUploaded.toISOString(),
+    file: n.file ? { name: n.file.FileName, sizeKB: n.file.SizeKB } : null,
+    hasLegacyLink: !!n.FileLink,
+  }));
+  // Printed faintly across every page of a document, so a photo of the screen can be traced back.
+  const sessionUser = (await getServerSession(authOptions))?.user;
+  const viewerLabel = `${sessionUser?.name ?? sessionUser?.email ?? "SMLD learner"} · ${new Date().toLocaleDateString("en-KE", { timeZone: "Africa/Nairobi", day: "numeric", month: "short", year: "numeric" })}`;
 
   let assignment: AssignmentStatus = null;
   if (!isStaff) {
@@ -41,7 +58,7 @@ export default async function LessonNotesPage({ params }: { params: Promise<{ le
 
   return (
     <LessonShell lessonId={lessonId} role={role} topicNumber={lesson.SequenceOrder} title={lesson.Title} lecturerName={lesson.createdBy?.FullName}>
-      {isStaff ? <LecturerNotesView lessonId={lessonId} notes={notes} /> : <StudentNotesView lessonId={lessonId} notes={notes} assignment={assignment} />}
+      {isStaff ? <LecturerNotesView lessonId={lessonId} notes={notes} viewerLabel={viewerLabel} /> : <StudentNotesView lessonId={lessonId} notes={notes} assignment={assignment} viewerLabel={viewerLabel} />}
     </LessonShell>
   );
 }

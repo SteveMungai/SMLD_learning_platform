@@ -20,10 +20,10 @@ function statusText(a: NonNullable<AssignmentStatus>) {
   return "Not submitted yet";
 }
 
-export default function StudentNotesView({ lessonId, notes, assignment }: { lessonId: string; notes: NoteItem[]; assignment: AssignmentStatus }) {
+export default function StudentNotesView({ lessonId, notes, assignment, viewerLabel }: { lessonId: string; notes: NoteItem[]; assignment: AssignmentStatus; viewerLabel: string }) {
   return (
     <>
-      <NotesList notes={notes} emptyText="Your lecturer hasn’t added notes for this lesson yet." />
+      <NotesList notes={notes} emptyText="Your lecturer hasn’t added notes for this lesson yet." viewerLabel={viewerLabel} />
 
       {assignment && (
         <section className="mt-10 rounded-lg p-4 text-left" style={{ background: colors.panel, border: `0.5px solid ${colors.border}` }}>
